@@ -56,8 +56,8 @@
 .sliders::-webkit-slider-thumb,
 .rgbScale::-webkit-slider-thumb{
     -webkit-appearance: none;
-    width: 2vh;
-    height: 2vh;
+    width: 16px;
+    height: 16px;
     border-width: 0;
     border-radius: 10px;
     cursor: grab;
@@ -77,12 +77,12 @@
 
 /* B/W slider HANDLE */
 #blackAndWhiteThreshold::-webkit-slider-thumb{
-    background: url("/icons/blackAndWhiteHandle.png");
+    background: url("icons/blackAndWhiteHandle.png");
 }
 
 /* contrast slider HANDLE */
 #amountOfContrast::-webkit-slider-thumb{
-    background: url("/icons/contrastHandle.png");
+    background: url("icons/contrastHandle.png");
 }
 
 /***** RGB-Sliders *****/
