@@ -26,6 +26,7 @@ class Sprite {
     }
 
     draw = () => {
+
         context.drawImage(
             this.image,
             this.framesCurrent * (this.image.width / this.framesCount),
@@ -55,10 +56,8 @@ class LivingEntity extends Sprite {
     constructor({imageSrc, position, direction, speed, framesCount, framesHold = 5}) {
         super({imageSrc, position, framesCount, framesHold});
         this.direction = direction;
-
         this.speed = speed;
     }
-
 }
 
 class Enemy extends LivingEntity {
@@ -160,6 +159,7 @@ class Player extends LivingEntity {
         else{
             this.image.src = "sprites/playerIdle.png"
             this.framesCount = 4;
+
         }
 
 
@@ -235,8 +235,8 @@ class Projectile extends LivingEntity {
 
 function getMousePos(canvas) {
     return {
-        x: mouseCoordinates.x - canvas.offsetLeft,
-        y: mouseCoordinates.y - canvas.offsetTop
+        x: mouseCoordinates.x - canvas.offsetLeft + WIDTH/2,
+        y: mouseCoordinates.y - canvas.offsetTop + HEIGHT/2
     };
 }
 

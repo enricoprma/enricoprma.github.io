@@ -91,6 +91,8 @@ const mouseCoordinates = {
     y: 0
 }
 
+
+
 window.addEventListener("mousemove", (event) =>{
     mouseCoordinates.x = event.clientX;
     mouseCoordinates.y = event.clientY;
