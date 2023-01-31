@@ -1,0 +1,8 @@
+body{
+    display: grid;
+    place-items: center;
+}
+canvas{
+    border-style: solid;
+
+}

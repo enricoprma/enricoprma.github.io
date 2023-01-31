@@ -1,0 +1,31 @@
+#histogram{
+    grid-row: 4/5;
+    grid-column: 2/3;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 3fr 1fr;
+    column-gap: 2vh;
+    place-items: center;
+}
+
+#histogramRed, #histogramGreen, #histogramBlue{
+    grid-row: 1/2;
+    border-style: solid;
+    border-color: #404040;
+    border-radius: 8px;
+    padding-right: 5px;
+    padding-left: 5px;
+    background-color: #000000;
+}
+
+h2{
+    color: lightgrey;
+    font-family: Tahoma,serif;
+    font-size: 17px;
+    text-align: center;
+}
+
+#updateHistogram{
+    grid-column: 2/3;
+    grid-row: 2/3;
+}

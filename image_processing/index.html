@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Processing Tool</title>
+    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="stylesheet.css">
+
+
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+</head>
+<body>
+
+<h1>Image Processing Tool</h1>
+
+<canvas id="image"></canvas>
+
+<section id="histogram">
+    <div>
+        <h2>RED</h2>
+        <canvas id="histogramRed"></canvas>
+
+    </div>
+    <div>
+        <h2>GREEN</h2>
+        <canvas id="histogramGreen"></canvas>
+    </div>
+    <div>
+        <h2>BLUE</h2>
+        <canvas id="histogramBlue"></canvas>
+    </div>
+
+    <button id="updateHistogram" onclick="drawHistogram()"> Update Histogram</button>
+</section>
+
+<section id="uploadAndDownload">
+    <label for="upload" id="uploadLabel">Upload Image<input type="file" id="upload"></label>
+    <label for="download" id="downloadLabel">Download Image
+        <button id="download"><a id="link" download></a></button>
+    </label>
+</section>
+
+<section id="filterFunctions">
+
+    <button id="greyscale" onclick="toGreyScale()"> Grayscale Filter</button>
+
+    <div id="blackAndWhiteInputs" class="sliderAndButton">
+        <button id="blackAndWhite" class="sliderButton" onclick="blackAndWhite()">Black/White Filter</button>
+        <div class="sliderContainer">
+            <label class="sliderLabel"></label>
+            <input class="sliders" type="range" min="0" max="255" value="127"
+                   id="blackAndWhiteThreshold">
+        </div>
+    </div>
+
+    <button id="negative" onclick="negative()"> Negative</button>
+
+    <button id="gauss3x3Hard" onclick="gaussFilter(3)">Gaussian Blur 3x3</button>
+
+    <button id="gauss5x5Hard" onclick="gaussFilter(5)">Gaussian Blur 5x5</button>
+
+    <button id="sobelHard" onclick="sobelFilter()">Sobel<br>Edge-Detection</button>
+
+    <div id="rgbInputs" class="sliderAndButton">
+
+        <button id="scaleRGB" class="sliderButton" onclick="scaleRGB()">Scale<br>RGB-Values</button>
+
+        <div id="rgbSliders">
+
+            <div class="sliderContainer">
+                <label class="sliderLabelRGB"></label>
+                <input type="range" min="0.0" max="2.0" step="0.1" value="1.0" id="redSlider" class="rgbScale">
+            </div>
+
+            <div class="sliderContainer">
+                <label class="sliderLabelRGB"></label>
+                <input type="range" min="0.0" max="2.0" step="0.1" value="1.0" id="greenSlider" class="rgbScale">
+            </div>
+
+            <div class="sliderContainer">
+                <label class="sliderLabelRGB"></label>
+                <input type="range" min="0.0" max="2.0" step="0.1" value="1.0" id="blueSlider" class="rgbScale">
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section id="scalingAndOrientationAndBrightness">
+    <button id="rotate" onclick="rotateBy90()">Rotate by 90°</button>
+
+    <button id="flipHorizontally" onclick="flipHorizontally()"> Flip Horizontally</button>
+    <button id="flipVertically" onclick="flipVertically()"> Flip Vertically</button>
+
+    <button id="scaleby2" onclick="scaleBy2()"> Scale 2x</button>
+    <button id="scaleby0.5" onclick="scaleBy05()">Scale 0.5x</button>
+
+    <button id="brighten" onclick="changeBrightness(10)">Brighten</button>
+
+    <button id="darken" onclick="changeBrightness(-10)">Darken</button>
+
+    <div id="contrastInputs" class="sliderAndButton">
+
+        <button id="changeContrast" class="sliderButton" onclick="changeContrast()">Change Contrast</button>
+
+        <div class="sliderContainer">
+            <label class="sliderLabel"></label>
+            <input class="sliders" type="range" min="-255" max="255" value="0" id="amountOfContrast">
+        </div>
+
+
+    </div>
+
+</section>
+
+<button id="undo" onclick="undo()">Undo All</button>
+
+</body>
+</html>

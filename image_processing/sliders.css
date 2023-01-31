@@ -1,0 +1,106 @@
+/****************** SLIDERS ***************/
+
+/***** LAYOUT *****/
+
+.sliderAndButton{
+    display: grid;
+    grid-template-rows: 6.25vh 2.5vh;
+    grid-row-gap: 1.5vh;
+    width: 21.875vh;
+    height: 10.625vh;
+}
+
+#rgbInputs{
+    display: grid;
+    grid-template-rows: 7.5vh 6.25vh;
+    grid-row-gap: 1vh;
+    width: 21.875vh;
+    height: 16.25vh;
+}
+
+.sliderButton{
+    margin: auto;
+}
+
+
+#rgbSliders{
+    display: grid;
+    grid-template-rows: 2.5vh 2.5vh 2.5vh;
+    height: 7.5vh;
+}
+
+.sliderContainer{
+    display: grid;
+    grid-template-columns: 3.75vh 15.625vh;
+    grid-column-gap: 0.625vh;
+}
+
+.sliderLabel, .sliderLabelRGB{
+    margin: auto;
+    color: lightgrey;
+    font-size: 1.75vh;
+}
+
+/***** SLIDERS-APPEARANCE *****/
+
+/* sliders general */
+.sliders,
+.rgbScale{
+    -webkit-appearance: none;
+    width: 15.625vh;
+    height: 0.5vh;
+    border-radius: 10px;
+    margin: auto;
+}
+/* slider HANDLE general */
+.sliders::-webkit-slider-thumb,
+.rgbScale::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 2vh;
+    height: 2vh;
+    border-width: 0;
+    border-radius: 10px;
+    cursor: grab;
+}
+
+/* change CURSOR to grabbing when clicking on HANDLE */
+.sliders::-webkit-slider-thumb:active,
+.rgbScale::-webkit-slider-thumb:active{
+    cursor: grabbing;
+}
+
+/* B/W and contrast slider */
+#blackAndWhiteThreshold,
+#amountOfContrast{
+    background: lightgrey;
+}
+
+/* B/W slider HANDLE */
+#blackAndWhiteThreshold::-webkit-slider-thumb{
+    background: url("/icons/blackAndWhiteHandle.png");
+}
+
+/* contrast slider HANDLE */
+#amountOfContrast::-webkit-slider-thumb{
+    background: url("/icons/contrastHandle.png");
+}
+
+/***** RGB-Sliders *****/
+
+/* red slider */
+#redSlider{
+    background: linear-gradient(to right, #FFCCCB, red);
+}
+/* green slider */
+#greenSlider{
+    background: linear-gradient(to right, #CEFAD0,limegreen);
+}
+/* blue slider */
+#blueSlider{
+    background: linear-gradient(to right, #D5FFFF, blue);
+}
+
+/* rgb-sliders HANDLE */
+.rgbScale::-webkit-slider-thumb {
+    background: white
+}
