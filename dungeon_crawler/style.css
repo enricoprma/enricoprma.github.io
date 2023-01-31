@@ -8,7 +8,6 @@
 body{
     display: grid;
     place-items: center;
-    grid-template-rows: 70vh 30vh;
 
     cursor: url("icons/cursor.png"), auto;
 
@@ -16,11 +15,16 @@ body{
 
 html{
     height: 100%;
+    width: 100%;
+    display: grid;
+    place-items: center;
 }
 
 body{
-background: linear-gradient(to right,darkorange,coral, darkorange, coral, darkorange);
-
+    background: linear-gradient(to right,darkorange,coral, darkorange, coral, darkorange);
+    position: relative;
+    height: 100vh;
+    width: 100vw;
 }
 #game{
     border-style: solid;
@@ -31,12 +35,11 @@ background: linear-gradient(to right,darkorange,coral, darkorange, coral, darkor
     transform: translate(-50%, -50%);
     max-width: 100%;
     max-height: 100%;
-    grid-row: 1/2;
 }
 
 #joysticks{
+    margin-top: 50vh;
     z-index: 1;
-    grid-row: 2/3;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-column-gap: 80vh;
