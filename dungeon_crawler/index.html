@@ -6,12 +6,17 @@
     <title>Dungeon Crawler</title>
     <link rel="stylesheet" href="style.css">
 
+    <script defer src="joy.js"></script>
     <script defer src="classes.js"></script>
     <script defer src="game.js"></script>
 </head>
 <body>
 
-<canvas id="canvas"></canvas>
+<div id="joysticks">
+    <div id="joyMove" style="width:120px;height:120px;margin-bottom:20px;"></div>
+    <div id="joyShoot" style="width:120px;height:120px;margin-bottom:20px;"></div>
+</div>
+<canvas id="game"></canvas>
 
 </body>
 </html>
