@@ -132,35 +132,55 @@ var JoyStick = (function(container, parameters, callback)
         document.addEventListener("mouseup", onMouseUp, false);
     }
     // Draw the object
-    drawExternal();
-    drawInternal();
+    let spriteExternal = new Image();
+    spriteExternal.src = "sprites/joypadExternal.png"
+
+    let spriteInternal = new Image();
+    spriteInternal.src = "sprites/joypadInternal.png";
+
+    spriteExternal.onload = () => drawExternal();
+
+    spriteInternal.onload = () => drawInternal();
 
     /******************************************************
      * Private methods
      *****************************************************/
+
 
     /**
      * @desc Draw the external circle used as reference position
      */
     function drawExternal()
     {
+        context.globalAlpha = 0.3;
+        context.drawImage(spriteExternal, centerX - spriteExternal.width/2, centerY - spriteExternal.width/2)
+        /*
         context.beginPath();
         context.arc(centerX, centerY, externalRadius, 0, circumference, false);
         context.lineWidth = externalLineWidth;
         context.strokeStyle = externalStrokeColor;
         context.stroke();
+
+         */
     }
+
 
     /**
      * @desc Draw the internal stick in the current position the user have moved it
      */
     function drawInternal()
     {
-        context.beginPath();
+        context.beginPath()
+
+        context.globalAlpha = 1;
         if(movedX<internalRadius) { movedX=maxMoveStick; }
         if((movedX+internalRadius) > canvas.width) { movedX = canvas.width-(maxMoveStick); }
         if(movedY<internalRadius) { movedY=maxMoveStick; }
         if((movedY+internalRadius) > canvas.height) { movedY = canvas.height-(maxMoveStick); }
+
+        context.drawImage(spriteInternal, movedX-spriteInternal.width/2, movedY-spriteInternal.width/2);
+
+        /*
         context.arc(movedX, movedY, internalRadius, 0, circumference, false);
         // create radial gradient
         var grd = context.createRadialGradient(centerX, centerY, 5, centerX, centerY, 200);
@@ -173,6 +193,12 @@ var JoyStick = (function(container, parameters, callback)
         context.lineWidth = internalLineWidth;
         context.strokeStyle = internalStrokeColor;
         context.stroke();
+
+         */
+
+
+
+
     }
 
     /**
@@ -204,6 +230,7 @@ var JoyStick = (function(container, parameters, callback)
                 movedX -= canvas.offsetParent.offsetLeft;
                 movedY -= canvas.offsetParent.offsetTop;
             }
+
             // Delete canvas
             context.clearRect(0, 0, canvas.width, canvas.height);
             // Redraw object

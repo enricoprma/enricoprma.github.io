@@ -38,7 +38,7 @@ body{
 }
 
 #joysticks{
-    margin-top: 50vh;
+    margin-top: 60vh;
     z-index: 1;
     display: grid;
     grid-template-columns: 1fr 1fr;

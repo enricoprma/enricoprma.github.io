@@ -156,16 +156,17 @@ class Player extends LivingEntity {
             this.image.src = "sprites/playerBowShoot.png"
             this.framesCount = 5;
         }
-        else{
+        else if(keys.mouse.clickEnded){
             this.image.src = "sprites/playerIdle.png"
             this.framesCount = 4;
-
+            this.framesCurrent = 0;
+            keys.mouse.clickEnded = false;
         }
 
 
         if (this.shoot_cooldown === 0) {
             if (keys.mouse.pressed) {
-                this.shoot_cooldown = 30;
+                this.shoot_cooldown = 0;
 
                 /*------------------- Calculate direction to shoot to ----------------------------------------------*/
                                                                                                                     //
@@ -192,7 +193,7 @@ class Player extends LivingEntity {
                         x: x,
                         y: y
                     },
-                    speed: 15,
+                    speed: 2,
                     rotation: Math.atan2(y, x),
                     framesCount: 2
                 })

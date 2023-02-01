@@ -34,7 +34,7 @@ const player = new Player({
         x: 0,
         y: 0,
     },
-    speed: 5,
+    speed: 10,
     framesCount: 4
 });
 
@@ -187,6 +187,7 @@ if (isMobile()) {
 
     window.addEventListener("mouseup", (event) => {
         keys.mouse.pressed = false;
+        keys.mouse.clickEnded = true;
     });
 
     window.addEventListener("keydown", (event) => {
