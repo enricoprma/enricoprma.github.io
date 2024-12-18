@@ -1,0 +1,89 @@
+:root {
+    --main-bg-color: #323232;
+    --content-color: #3A3A3A;
+    --text-color: #C2C2C4;
+    --text-color-disabled: #818181;
+    --accent-color: #33B14C;
+}
+
+html{
+    height: 100%;
+    width: 100%;
+    display: grid;
+    place-items: center;
+}
+
+body{
+    background-color: var(--main-bg-color);
+}
+#content{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    column-gap: 2%;
+}
+
+#inputs{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    row-gap: 20px;
+    padding: 1%;
+    border: 1px solid var(--content-color);
+    margin-bottom: auto;
+}
+
+.inputWrapper{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    column-gap: 10px;
+}
+
+input{
+    background-color: var(--content-color);
+    border: none;
+    color: var(--text-color);
+    padding: 2px;
+    text-align: center;
+    accent-color: var(--accent-color);
+}
+
+button{
+    background-color: var(--content-color);
+    color: var(--text-color);
+    border: none;
+    padding: 10px;
+    transition: 0.3s ease-in-out;
+}
+
+button:hover{
+    background-color: var(--accent-color);
+}
+
+button:disabled, input:disabled{
+    background-color: var(--content-color);
+    color: var(--text-color-disabled);
+    accent-color: var(--content-color);
+}
+
+.defaultHidden{
+    display: none;
+}
+
+canvas{
+    background-color: var(--content-color);
+    width: 80%;
+}
+
+label, h1{
+    color: var(--text-color);
+    text-align: center;
+    padding: 2px;
+    font-family: Nunito, sans-serif;
+}
+
+h1{
+    font-weight: bold;
+}
