@@ -1,0 +1,44 @@
+﻿<!DOCTYPE html>
+<html style="margin:0; padding: 0;" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Canvas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body oncontextmenu="return false;">
+    <h1>Interactive modeling of Bézier curves</h1>
+    <div id="content">
+        <div class="inputs">
+            <section class="ui-block">
+                <p>
+                    <b>Controls:</b><br>
+                    <br>
+                    Left mouse button (empty space):<br> <i>create new control point</i><br>
+                    <br>
+                    Left mouse button (on point):<br> <i>drag point</i> <br>
+                    <br>
+                    Right mouse button:<br> <i>delete control point</i>
+                </p>
+            </section>
+            <section class="ui-block" id="construction">
+                <div class="inputWrapper">
+                    <label for="showConstruction">Show Construction for b(t):</label>
+                    <input id="showConstruction" type="checkbox">
+                </div>
+                <div class="inputWrapper defaultHidden">
+                    <label for="tUserInput"> t =</label>
+                    <input id="tUserInput" type="number" min="0" max="1" step="0.01" value="0.5">
+                    <label style="font-size: 12px" for="showConstruction">(0 <= t <= 1)</label>
+                </div>
+                <button class="defaultHidden" id="animateConstruction">Animate Construction</button>
+            </section>
+            <section class="ui-block">
+                <button id="createCurveButton">Create new Curve</button>
+                <div class="inputWrapper defaultHidden" id="curveSelection"></div>
+            </section>
+            <button id="fuseBezier">Fuse Curves 1 and 2</button>
+        </div>
+    </div>
+	<script src="build/main.js" type="module"></script>
+</body>
+</html>
