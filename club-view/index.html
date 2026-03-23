@@ -167,6 +167,14 @@
 
       <section class="detail-section">
         <h3>Verlauf</h3>
+        <div class="detail-range-controls" role="group" aria-label="Zeitraum für Verlauf">
+          <button class="ghost-button detail-range-button is-active" type="button" data-history-days="7" aria-pressed="true">
+            7 Tage
+          </button>
+          <button class="ghost-button detail-range-button" type="button" data-history-days="30" aria-pressed="false">
+            30 Tage
+          </button>
+        </div>
         <div id="detail-history-state" class="detail-history-state">Wähle einen Spieler aus.</div>
         <div id="detail-charts" class="detail-charts"></div>
         <div class="detail-history-wrap">
