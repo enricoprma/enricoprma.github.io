@@ -3,10 +3,14 @@ const dashboardBody = document.getElementById('dashboard-body');
 const tableState = document.getElementById('table-state');
 const refreshButton = document.getElementById('refresh-button');
 const dataState = document.getElementById('data-state');
+const themeButtons = [...document.querySelectorAll('.theme-option[data-theme-value]')];
 const statusFilter = document.getElementById('status-filter');
+const reasonFilter = document.getElementById('reason-filter');
 const searchInput = document.getElementById('search-input');
+const mobileSortKey = document.getElementById('mobile-sort-key');
 const mobileSortDirection = document.getElementById('mobile-sort-direction');
 const mobileList = document.getElementById('mobile-list');
+const sortButtons = [...document.querySelectorAll('.sort-button[data-sort-key]')];
 const detailBackdrop = document.getElementById('detail-backdrop');
 const detailPanel = document.getElementById('detail-panel');
 const detailCloseButton = document.getElementById('detail-close');
@@ -21,6 +25,7 @@ let currentDetailRow = null;
 let currentDetailHistoryRows = [];
 const historyCache = new Map();
 let sortState = {
+  key: 'wins_display',
   direction: 'asc',
 };
 
@@ -28,10 +33,44 @@ refreshButton.addEventListener('click', () => {
   void loadDashboard();
 });
 
+themeButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    applyTheme(button.dataset.themeValue);
+  });
+});
+
 statusFilter.addEventListener('change', renderRows);
+reasonFilter?.addEventListener('change', renderRows);
 searchInput.addEventListener('input', renderRows);
+mobileSortKey?.addEventListener('change', () => {
+  sortState = {
+    ...sortState,
+    key: mobileSortKey.value,
+  };
+  renderRows();
+});
 mobileSortDirection?.addEventListener('click', () => {
   toggleSortDirection();
+});
+sortButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    const nextKey = button.dataset.sortKey;
+
+    if (!nextKey) {
+      return;
+    }
+
+    if (sortState.key === nextKey) {
+      toggleSortDirection();
+      return;
+    }
+
+    sortState = {
+      key: nextKey,
+      direction: nextKey === 'status' || nextKey === 'reason' ? 'asc' : 'desc',
+    };
+    renderRows();
+  });
 });
 dashboardBody.addEventListener('click', handleRowClick);
 dashboardBody.addEventListener('keydown', handleRowKeyDown);
@@ -60,8 +99,9 @@ window.addEventListener('keydown', (event) => {
   }
 });
 
-syncSortDirectionToggle();
+syncSortControls();
 syncDetailHistoryRangeButtons();
+syncThemeControls();
 
 if (!config) {
   refreshButton.disabled = true;
@@ -101,6 +141,27 @@ async function loadDashboard() {
   } finally {
     toggleRefresh(false);
   }
+}
+
+function applyTheme(themeName) {
+  const normalizedTheme = themeName === 'arena' ? 'arena' : 'club';
+  document.documentElement.dataset.theme = normalizedTheme;
+
+  try {
+    localStorage.setItem('club-view-theme', normalizedTheme);
+  } catch {}
+
+  syncThemeControls();
+}
+
+function syncThemeControls() {
+  const activeTheme = document.documentElement.dataset.theme === 'arena' ? 'arena' : 'club';
+
+  themeButtons.forEach((button) => {
+    const isActive = button.dataset.themeValue === activeTheme;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
 }
 
 async function fetchDashboardRows(currentConfig) {
@@ -207,9 +268,9 @@ function renderSummary(rows) {
 }
 
 function renderRows() {
-  const filteredRows = allRows.filter((row) => matchesStatus(row) && matchesSearch(row));
-  const sortedRows = sortRowsByWinsGrowth(filteredRows, sortState.direction);
-  syncSortDirectionToggle();
+  const filteredRows = allRows.filter((row) => matchesStatus(row) && matchesReason(row) && matchesSearch(row));
+  const sortedRows = sortRows(filteredRows, sortState.key, sortState.direction);
+  syncSortControls();
 
   if (sortedRows.length === 0) {
     dashboardBody.innerHTML = '';
@@ -236,12 +297,13 @@ function renderRows() {
             <span class="player-name">${escapeHtml(row.player_name ?? '-')}</span>
             <span class="player-tag">${escapeHtml(row.player_tag ?? '')}</span>
           </td>
-          <td class="numeric">${formatNumber(row.days_in_club)}</td>
-          <td class="numeric">${formatNumber(row.team_wins_total)}</td>
-          <td class="numeric">${renderDeltaMarkup(row.wins_display)}</td>
-          <td class="numeric">${renderDeltaMarkup(row.trophies_display)}</td>
-          <td class="numeric">${formatNumber(row.days_no_progress)}</td>
           <td class="status-cell"><div class="chip-list">${statusChips.map(renderChipMarkup).join('')}</div></td>
+          <td class="numeric">${formatRelativeDayLabel(row.last_progress_date)}</td>
+          <td class="numeric">${renderDeltaMarkup(row.wins_display)}</td>
+          <td class="numeric">${formatNumber(row.team_wins_total)}</td>
+          <td class="numeric">${formatNumber(row.trophies_total)}</td>
+          <td class="numeric">${renderDeltaMarkup(row.trophies_display)}</td>
+          <td class="numeric">${renderTrackingSinceMarkup(row.tracking_start_date, row.tracked_days)}</td>
           <td class="reason"><div class="chip-list">${renderedReasons}</div></td>
         </tr>
       `;
@@ -782,38 +844,54 @@ function matchesSearch(row) {
     .some((value) => String(value).toLowerCase().includes(term));
 }
 
-function syncSortDirectionToggle() {
+function matchesReason(row) {
+  const selectedReason = reasonFilter?.value ?? 'all';
+
+  if (selectedReason === 'all') {
+    return true;
+  }
+
+  return getReasonTokens(row).includes(selectedReason);
+}
+
+function syncSortControls() {
+  if (mobileSortKey) {
+    mobileSortKey.value = sortState.key;
+  }
+
   if (mobileSortDirection) {
     const label = sortState.direction === 'asc' ? 'Aufsteigend' : 'Absteigend';
     mobileSortDirection.textContent = label;
-    mobileSortDirection.setAttribute('aria-label', `3v3 Zuwachs ${label.toLowerCase()} sortieren`);
+    mobileSortDirection.setAttribute('aria-label', `${sortState.key} ${label.toLowerCase()} sortieren`);
   }
+
+  sortButtons.forEach((button) => {
+    const isActive = button.dataset.sortKey === sortState.key;
+    button.classList.toggle('is-active', isActive);
+
+    const ariaSort = !isActive
+      ? 'none'
+      : sortState.direction === 'asc'
+        ? 'ascending'
+        : 'descending';
+
+    button.closest('th')?.setAttribute('aria-sort', ariaSort);
+  });
 }
 
 function toggleSortDirection() {
   sortState = {
+    ...sortState,
     direction: sortState.direction === 'asc' ? 'desc' : 'asc',
   };
   renderRows();
 }
 
-function sortRowsByWinsGrowth(rows, direction) {
+function sortRows(rows, key, direction) {
   const decorated = rows.map((row, index) => ({ row, index }));
 
   decorated.sort((left, right) => {
-    const leftValue = numberOrNull(left.row.wins_display);
-    const rightValue = numberOrNull(right.row.wins_display);
-    let comparison = 0;
-
-    if (leftValue === null && rightValue === null) {
-      comparison = 0;
-    } else if (leftValue === null) {
-      comparison = 1;
-    } else if (rightValue === null) {
-      comparison = -1;
-    } else {
-      comparison = leftValue - rightValue;
-    }
+    const comparison = compareRowValues(left.row, right.row, key);
 
     if (comparison !== 0) {
       return direction === 'asc' ? comparison : -comparison;
@@ -830,6 +908,80 @@ function sortRowsByWinsGrowth(rows, direction) {
   });
 
   return decorated.map((entry) => entry.row);
+}
+
+function compareRowValues(leftRow, rightRow, key) {
+  const leftValue = getSortValue(leftRow, key);
+  const rightValue = getSortValue(rightRow, key);
+
+  if (leftValue === null && rightValue === null) {
+    return 0;
+  }
+
+  if (leftValue === null) {
+    return 1;
+  }
+
+  if (rightValue === null) {
+    return -1;
+  }
+
+  if (typeof leftValue === 'number' && typeof rightValue === 'number') {
+    return leftValue - rightValue;
+  }
+
+  return String(leftValue).localeCompare(String(rightValue), 'de', {
+    numeric: true,
+    sensitivity: 'base',
+  });
+}
+
+function getSortValue(row, key) {
+  switch (key) {
+    case 'name':
+      return `${row.player_name ?? ''} ${row.player_tag ?? ''}`.trim();
+    case 'status':
+      return getStatusSortRank(getEffectiveStatusKey(row));
+    case 'last_progress_date':
+      return parseSortDateValue(row.last_progress_date);
+    case 'wins_display':
+      return numberOrNull(row.wins_display);
+    case 'team_wins_total':
+      return numberOrNull(row.team_wins_total);
+    case 'trophies_total':
+      return numberOrNull(row.trophies_total);
+    case 'trophies_display':
+      return numberOrNull(row.trophies_display);
+    case 'tracking_start_date':
+      return parseSortDateValue(row.tracking_start_date);
+    case 'reason':
+      return buildReasonChips(row).map((chip) => chip.text).join(' | ');
+    default:
+      return null;
+  }
+}
+
+function getStatusSortRank(status) {
+  switch (status) {
+    case 'kritisch':
+      return 0;
+    case 'fraglich':
+      return 1;
+    case 'aktiv':
+      return 2;
+    case 'geschuetzt':
+      return 3;
+    default:
+      return 4;
+  }
+}
+
+function parseSortDateValue(value) {
+  if (!value) {
+    return null;
+  }
+
+  return new Date(value).getTime();
 }
 
 function numberOrNull(value) {
@@ -918,6 +1070,57 @@ function renderDeltaMarkup(value) {
       <span class="delta-value ${deltaClass}">${escapeHtml(formatted)}</span>
     </span>
   `;
+}
+
+function renderTrackingSinceMarkup(dateValue, trackedDays) {
+  const formattedDate = formatDateLabel(dateValue);
+  const trackedLabel = formatTrackedDaysLabel(trackedDays);
+
+  if (!trackedLabel) {
+    return escapeHtml(formattedDate);
+  }
+
+  return `
+    <span class="table-stack">
+      <span>${escapeHtml(formattedDate)}</span>
+      <span class="table-meta">${escapeHtml(trackedLabel)}</span>
+    </span>
+  `;
+}
+
+function getReasonTokens(row) {
+  const tokens = [];
+  const winsGrowth = numberOrNull(row.wins_display);
+
+  if (isLeadershipRole(row.role)) {
+    tokens.push('leadership');
+  } else if (row.protection_active === true) {
+    tokens.push('protected');
+  }
+
+  if (!row.current_snapshot_date) {
+    tokens.push('no_snapshot');
+  }
+
+  if (typeof row.days_no_progress === 'number' && row.days_no_progress >= 2) {
+    tokens.push('no_progress');
+  }
+
+  if (winsGrowth === 0) {
+    tokens.push('no_gain');
+  } else if (typeof winsGrowth === 'number' && winsGrowth < 20) {
+    tokens.push('lt20');
+  } else if (typeof winsGrowth === 'number' && winsGrowth < 42) {
+    tokens.push('lt42');
+  } else if (typeof winsGrowth === 'number' && winsGrowth < 84) {
+    tokens.push('below_goal');
+  }
+
+  if (row.meets_min_wins === false) {
+    tokens.push('min_3v3');
+  }
+
+  return tokens;
 }
 
 function buildReasonChips(row) {

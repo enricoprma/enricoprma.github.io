@@ -10,6 +10,16 @@
   <link
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap"
     rel="stylesheet" />
+  <script>
+    (() => {
+      try {
+        const storedTheme = localStorage.getItem('club-view-theme');
+        document.documentElement.dataset.theme = storedTheme === 'arena' ? 'arena' : 'club';
+      } catch {
+        document.documentElement.dataset.theme = 'club';
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
@@ -25,6 +35,13 @@
       </div>
       <div class="hero-side">
         <div class="hero-actions">
+          <div class="theme-switch">
+            <span class="theme-switch-label">Mode</span>
+            <div class="theme-switcher" role="group" aria-label="Light oder Dark Mode auswählen">
+              <button class="theme-option" type="button" data-theme-value="club" aria-pressed="true">Light</button>
+              <button class="theme-option" type="button" data-theme-value="arena" aria-pressed="false">Dark</button>
+            </div>
+          </div>
           <p id="data-state" class="refresh-state">Stand: -</p>
         </div>
         <button id="refresh-button" class="button hero-button" type="button">Aktualisieren</button>
@@ -90,38 +107,44 @@
                 </button>
               </th>
               <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="days_in_club">
-                  <span class="sort-label">Tage im Club</span>
+                <button class="sort-button" type="button" data-sort-key="status">
+                  <span class="sort-label">Status</span>
                   <span class="sort-icon" aria-hidden="true"></span>
                 </button>
               </th>
               <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="team_wins_total">
-                  <span class="sort-label">3v3 gesamt</span>
+                <button class="sort-button" type="button" data-sort-key="last_progress_date">
+                  <span class="sort-label">Letzter 3v3 Sieg</span>
                   <span class="sort-icon" aria-hidden="true"></span>
                 </button>
               </th>
               <th aria-sort="none">
                 <button class="sort-button" type="button" data-sort-key="wins_display">
-                  <span class="sort-label">3v3 Zuwachs (7 Tage)</span>
+                  <span class="sort-label">3v3-Gain (7 Tage)</span>
+                  <span class="sort-icon" aria-hidden="true"></span>
+                </button>
+              </th>
+              <th aria-sort="none">
+                <button class="sort-button" type="button" data-sort-key="team_wins_total">
+                  <span class="sort-label">3v3 Siege</span>
+                  <span class="sort-icon" aria-hidden="true"></span>
+                </button>
+              </th>
+              <th aria-sort="none">
+                <button class="sort-button" type="button" data-sort-key="trophies_total">
+                  <span class="sort-label">Trophäen</span>
                   <span class="sort-icon" aria-hidden="true"></span>
                 </button>
               </th>
               <th aria-sort="none">
                 <button class="sort-button" type="button" data-sort-key="trophies_display">
-                  <span class="sort-label">Trophäen-Zuwachs (7 Tage)</span>
+                  <span class="sort-label">Trophy-Gain (7 Tage)</span>
                   <span class="sort-icon" aria-hidden="true"></span>
                 </button>
               </th>
               <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="days_no_progress">
-                  <span class="sort-label">Tage ohne Progress</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="status">
-                  <span class="sort-label">Status</span>
+                <button class="sort-button" type="button" data-sort-key="tracking_start_date">
+                  <span class="sort-label">Tracking seit</span>
                   <span class="sort-icon" aria-hidden="true"></span>
                 </button>
               </th>
@@ -167,24 +190,16 @@
 
       <section class="detail-section">
         <h3>Verlauf</h3>
-        <div class="detail-range-controls" role="group" aria-label="Zeitraum für Verlauf">
-          <button class="ghost-button detail-range-button is-active" type="button" data-history-days="7" aria-pressed="true">
-            7 Tage
-          </button>
-          <button class="ghost-button detail-range-button" type="button" data-history-days="30" aria-pressed="false">
-            30 Tage
-          </button>
-        </div>
         <div id="detail-history-state" class="detail-history-state">Wähle einen Spieler aus.</div>
         <div id="detail-charts" class="detail-charts"></div>
         <div class="detail-history-wrap">
           <table class="detail-history-table">
-              <thead>
-                <tr>
-                  <th>Zeitpunkt</th>
-                  <th>Trophäen</th>
-                  <th>3v3 Wins</th>
-                </tr>
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Trophäen</th>
+                <th>3v3 Wins</th>
+              </tr>
             </thead>
             <tbody id="detail-history-body"></tbody>
           </table>
