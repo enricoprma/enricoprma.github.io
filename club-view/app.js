@@ -11,9 +11,14 @@ const mobileSortKey = document.getElementById('mobile-sort-key');
 const mobileSortDirection = document.getElementById('mobile-sort-direction');
 const mobileList = document.getElementById('mobile-list');
 const sortButtons = [...document.querySelectorAll('.sort-button[data-sort-key]')];
+const overviewChartState = document.getElementById('overview-chart-state');
+const overviewChart = document.getElementById('overview-chart');
+const overviewGainState = document.getElementById('overview-gain-state');
+const overviewGainChart = document.getElementById('overview-gain-chart');
 const detailBackdrop = document.getElementById('detail-backdrop');
 const detailPanel = document.getElementById('detail-panel');
 const detailCloseButton = document.getElementById('detail-close');
+const detailCharts = document.getElementById('detail-charts');
 const detailRangeButtons = [...document.querySelectorAll('[data-history-days]')];
 const MAX_DETAIL_HISTORY_DAYS = 30;
 
@@ -75,8 +80,13 @@ sortButtons.forEach((button) => {
 dashboardBody.addEventListener('click', handleRowClick);
 dashboardBody.addEventListener('keydown', handleRowKeyDown);
 mobileList?.addEventListener('click', handleMobileCardClick);
+mobileList?.addEventListener('keydown', handleMobileCardKeyDown);
 detailBackdrop.addEventListener('click', closeDetailPanel);
 detailCloseButton.addEventListener('click', closeDetailPanel);
+detailCharts?.addEventListener('click', handleDetailChartPointClick);
+detailCharts?.addEventListener('keydown', handleDetailChartPointKeyDown);
+overviewGainChart?.addEventListener('click', handleDetailChartPointClick);
+overviewGainChart?.addEventListener('keydown', handleDetailChartPointKeyDown);
 detailRangeButtons.forEach((button) => {
   button.addEventListener('click', () => {
     const nextDays = Number(button.dataset.historyDays);
@@ -117,12 +127,17 @@ if (!config) {
 async function loadDashboard() {
   toggleRefresh(true);
   setTableState('Lade Daten ...', true);
+  setOverviewChartState('Lade Status-Verteilung ...', true);
+  setOverviewGainState('Lade 3v3-Gain ...', true);
+  overviewChart.innerHTML = '';
+  overviewGainChart.innerHTML = '';
 
   try {
     const rows = await fetchDashboardRows(config);
     allRows = rows;
     historyCache.clear();
-    renderSummary(rows);
+
+    renderOverviewMeta(rows);
     renderRows();
 
     if (selectedPlayerId) {
@@ -138,13 +153,17 @@ async function loadDashboard() {
     console.error(error);
     const message = error instanceof Error ? error.message : String(error);
     setTableState(`Fehler beim Laden: ${message}`, true);
+    setOverviewChartState(`Status-Verteilung konnte nicht geladen werden: ${message}`, true);
+    setOverviewGainState(`3v3-Gain konnte nicht geladen werden: ${message}`, true);
+    overviewChart.innerHTML = '';
+    overviewGainChart.innerHTML = '';
   } finally {
     toggleRefresh(false);
   }
 }
 
 function applyTheme(themeName) {
-  const normalizedTheme = themeName === 'arena' ? 'arena' : 'club';
+  const normalizedTheme = ['club', 'arena', 'brawl'].includes(themeName) ? themeName : 'club';
   document.documentElement.dataset.theme = normalizedTheme;
 
   try {
@@ -155,7 +174,9 @@ function applyTheme(themeName) {
 }
 
 function syncThemeControls() {
-  const activeTheme = document.documentElement.dataset.theme === 'arena' ? 'arena' : 'club';
+  const activeTheme = ['club', 'arena', 'brawl'].includes(document.documentElement.dataset.theme)
+    ? document.documentElement.dataset.theme
+    : 'club';
 
   themeButtons.forEach((button) => {
     const isActive = button.dataset.themeValue === activeTheme;
@@ -192,6 +213,7 @@ async function fetchDashboardRows(currentConfig) {
       'current_snapshot_date',
       'current_snapshot_at',
       'last_progress_date',
+      'last_progress_at',
       'tracking_start_date',
       'tracked_days',
       'wins_since_tracking_start',
@@ -247,18 +269,13 @@ async function fetchPlayerHistory(currentConfig, clubTag, playerId) {
   return rows;
 }
 
-function renderSummary(rows) {
-  const criticalCount = rows.filter((row) => getEffectiveStatusKey(row) === 'kritisch').length;
-  const watchCount = rows.filter((row) => getEffectiveStatusKey(row) === 'fraglich').length;
+function renderOverviewMeta(rows) {
   const latestSnapshotAt = rows
     .map((row) => row.current_snapshot_at)
     .filter(Boolean)
     .sort()
     .at(-1);
 
-  document.getElementById('metric-members').textContent = String(rows.length);
-  document.getElementById('metric-watch').textContent = String(watchCount);
-  document.getElementById('metric-critical').textContent = String(criticalCount);
   document.getElementById('metric-snapshot').textContent = latestSnapshotAt
     ? formatDateTime(new Date(latestSnapshotAt))
     : '-';
@@ -271,6 +288,8 @@ function renderRows() {
   const filteredRows = allRows.filter((row) => matchesStatus(row) && matchesReason(row) && matchesSearch(row));
   const sortedRows = sortRows(filteredRows, sortState.key, sortState.direction);
   syncSortControls();
+  renderOverviewStatusChart(allRows);
+  renderOverviewGainChart(allRows);
 
   if (sortedRows.length === 0) {
     dashboardBody.innerHTML = '';
@@ -289,7 +308,7 @@ function renderRows() {
       const reasons = buildReasonChips(row);
       const renderedReasons = reasons.length > 0
         ? reasons.map(renderChipMarkup).join('')
-        : renderChipMarkup({ text: 'keine Auffälligkeit', tone: 'safe' });
+        : '';
 
       return `
         <tr class="row-link" tabindex="0" data-player-id="${escapeHtml(row.player_id)}">
@@ -298,7 +317,7 @@ function renderRows() {
             <span class="player-tag">${escapeHtml(row.player_tag ?? '')}</span>
           </td>
           <td class="status-cell"><div class="chip-list">${statusChips.map(renderChipMarkup).join('')}</div></td>
-          <td class="numeric">${formatRelativeDayLabel(row.last_progress_date)}</td>
+          <td class="numeric">${formatLastProgressLabel(row.last_progress_date, row.last_progress_at)}</td>
           <td class="numeric">${renderDeltaMarkup(row.wins_display)}</td>
           <td class="numeric">${formatNumber(row.team_wins_total)}</td>
           <td class="numeric">${formatNumber(row.trophies_total)}</td>
@@ -321,10 +340,10 @@ function renderMobileCardMarkup(row) {
 
   const renderedReasons = reasons.length > 0
     ? reasons.map(renderChipMarkup).join('')
-    : renderChipMarkup({ text: 'keine Auffälligkeit', tone: 'safe' });
+    : '';
 
   return `
-    <button class="mobile-card" type="button" data-player-id="${escapeHtml(row.player_id)}">
+    <article class="mobile-card" tabindex="0" role="button" data-player-id="${escapeHtml(row.player_id)}">
       <div class="mobile-card-top">
         <div class="mobile-card-name">
           <span class="mobile-card-title">${escapeHtml(row.player_name ?? '-')}</span>
@@ -335,7 +354,7 @@ function renderMobileCardMarkup(row) {
       <div class="mobile-card-grid">
         <article class="mobile-stat">
           <span class="mobile-stat-label">Letzter 3v3 Sieg</span>
-          <strong class="mobile-stat-value">${formatRelativeDayLabel(row.last_progress_date)}</strong>
+          <strong class="mobile-stat-value">${formatLastProgressLabel(row.last_progress_date, row.last_progress_at)}</strong>
         </article>
         <article class="mobile-stat">
           <span class="mobile-stat-label">3v3-Gain (7 Tage)</span>
@@ -343,7 +362,7 @@ function renderMobileCardMarkup(row) {
         </article>
       </div>
       <div class="chip-list mobile-card-reasons">${renderedReasons}</div>
-    </button>
+    </article>
   `;
 }
 
@@ -361,7 +380,7 @@ function handleRowClick(event) {
 }
 
 function handleMobileCardClick(event) {
-  const cardElement = event.target.closest('button[data-player-id]');
+  const cardElement = event.target.closest('[data-player-id]');
 
   if (!cardElement) {
     return;
@@ -373,10 +392,102 @@ function handleMobileCardClick(event) {
   }
 }
 
+function handleMobileCardKeyDown(event) {
+  if (event.key !== 'Enter' && event.key !== ' ') {
+    return;
+  }
+
+  const cardElement = event.target.closest('[data-player-id]');
+
+  if (!cardElement) {
+    return;
+  }
+
+  event.preventDefault();
+  const row = allRows.find((entry) => entry.player_id === cardElement.dataset.playerId);
+  if (row) {
+    void openDetailPanel(row);
+  }
+}
+
+
+
+
+
+
+
+
+function handleDetailChartPointClick(event) {
+  const pointElement = event.target.closest('[data-chart-point]');
+
+  if (!pointElement) {
+    const chartCard = event.target.closest('.detail-chart-card');
+    if (chartCard) {
+      clearDetailChartSelection(chartCard);
+    }
+    return;
+  }
+
+  updateDetailChartSelection(pointElement);
+}
+
+function handleDetailChartPointKeyDown(event) {
+  if (event.key !== 'Enter' && event.key !== ' ') {
+    return;
+  }
+
+  const pointElement = event.target.closest('[data-chart-point]');
+
+  if (!pointElement) {
+    return;
+  }
+
+  event.preventDefault();
+  updateDetailChartSelection(pointElement);
+}
+
+function updateDetailChartSelection(pointElement) {
+  const chartCard = pointElement.closest('.detail-chart-card');
+  const tooltipElement = chartCard?.querySelector('.detail-chart-tooltip');
+
+  if (!chartCard || !tooltipElement) {
+    return;
+  }
+
+  chartCard.querySelectorAll('[data-chart-point]').forEach((element) => {
+    element.setAttribute('aria-pressed', String(element === pointElement));
+  });
+
+  const title = pointElement.dataset.pointTitle ?? '';
+  const delta = pointElement.dataset.pointDelta ?? '';
+  const value = pointElement.dataset.pointValue ?? '';
+
+  tooltipElement.innerHTML = `
+    <div class="detail-chart-tooltip-title">${escapeHtml(title)}</div>
+    ${delta ? `<div class="detail-chart-tooltip-line">${escapeHtml(delta)}</div>` : ''}
+    ${value ? `<div class="detail-chart-tooltip-line">${escapeHtml(value)}</div>` : ''}
+  `;
+  tooltipElement.hidden = false;
+  tooltipElement.style.left = pointElement.dataset.pointLeft ?? '50%';
+  tooltipElement.style.top = pointElement.dataset.pointTop ?? '50%';
+}
+
+function clearDetailChartSelection(chartCard) {
+  chartCard.querySelectorAll('[data-chart-point]').forEach((element) => {
+    element.setAttribute('aria-pressed', 'false');
+  });
+
+  chartCard.querySelectorAll('.detail-chart-tooltip').forEach((element) => {
+    element.hidden = true;
+    element.innerHTML = '';
+  });
+}
+
 function handleRowKeyDown(event) {
   if (event.key !== 'Enter' && event.key !== ' ') {
     return;
   }
+
 
   const rowElement = event.target.closest('tr[data-player-id]');
   if (!rowElement) {
@@ -441,6 +552,7 @@ function closeDetailPanel() {
   detailBackdrop.hidden = true;
   detailPanel.hidden = true;
   detailPanel.setAttribute('aria-hidden', 'true');
+
   document.body.classList.remove('detail-open');
 }
 
@@ -454,7 +566,7 @@ function renderDetailHeader(row) {
 
 function renderDetailMetrics(row) {
   const metrics = [
-    { label: 'Letzter 3v3 Sieg', value: formatRelativeDayLabel(row.last_progress_date) },
+    { label: 'Letzter 3v3 Sieg', value: formatLastProgressLabel(row.last_progress_date, row.last_progress_at) },
     {
       label: '3v3-Gain (7 Tage)',
       value: formatDelta(row.wins_7d ?? row.wins_since_tracking_start),
@@ -471,7 +583,6 @@ function renderDetailMetrics(row) {
     },
   ];
 
-  // ${index % 2 !== 0 && index < metrics.length - 1 ? `<div class="detail-metric-divider"></div><div class="detail-metric-divider"></div>` : ''}
   document.getElementById('detail-metrics').innerHTML = metrics
     .map((metric, index) => {
       return `
@@ -489,25 +600,292 @@ function renderDetailReasons(row) {
   const reasons = buildReasonChips(row);
   document.getElementById('detail-reasons').innerHTML = reasons.length > 0
     ? reasons.map(renderChipMarkup).join('')
-    : renderChipMarkup({ text: 'keine Auffälligkeit', tone: 'safe' });
+    : '';
 }
 
 function renderDetailHistory(detailRow, historyRows) {
   const charts = document.getElementById('detail-charts');
-  const preparedRows = prepareDetailHistoryRows(detailRow, historyRows)
-    .slice(0, selectedDetailHistoryDays);
+  const preparedRows = prepareDetailHistoryRows(detailRow, historyRows);
+  const visibleRows = preparedRows.slice(0, selectedDetailHistoryDays);
+  const previousRow = preparedRows[selectedDetailHistoryDays] ?? null;
 
-  if (!Array.isArray(preparedRows) || preparedRows.length === 0) {
+  if (!Array.isArray(visibleRows) || visibleRows.length === 0) {
     charts.innerHTML = renderDetailChartPlaceholder('Noch keine Tageshistorie für Verlaufscharts vorhanden.');
     setDetailHistoryState('Noch keine Tageshistorie vorhanden.', true);
     return;
   }
 
   setDetailHistoryState('', false);
-  renderDetailCharts(preparedRows);
+  renderDetailCharts(visibleRows, previousRow);
 }
 
-function renderDetailCharts(historyRows) {
+function renderOverviewStatusChart(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    overviewChart.innerHTML = '';
+    setOverviewChartState('Noch keine Mitglieder fuer den Ueberblick vorhanden.', true);
+    return;
+  }
+
+  const counts = {
+    aktiv: 0,
+    fraglich: 0,
+    kritisch: 0,
+    geschuetzt: 0,
+    unbekannt: 0,
+  };
+
+  rows.forEach((row) => {
+    const status = getEffectiveStatusKey(row);
+    if (status in counts) {
+      counts[status] += 1;
+    } else {
+      counts.unbekannt += 1;
+    }
+  });
+
+  const chartStatuses = ['aktiv', 'fraglich', 'kritisch', 'geschuetzt'];
+  const chartTotal = chartStatuses.reduce((sum, status) => sum + counts[status], 0);
+
+  if (chartTotal === 0) {
+    overviewChart.innerHTML = '';
+    setOverviewChartState('Noch keine auswertbaren Statusdaten vorhanden.', true);
+    return;
+  }
+
+  const radius = 66;
+  const circumference = 2 * Math.PI * radius;
+  let consumedLength = 0;
+  const segments = chartStatuses
+    .filter((status) => counts[status] > 0)
+    .map((status) => {
+      const count = counts[status];
+      const length = Number(((count / chartTotal) * circumference).toFixed(3));
+      const segment = {
+        status,
+        count,
+        color: getOverviewStatusColor(status),
+        dasharray: `${length} ${Math.max(0, circumference - length)}`,
+        dashoffset: Number((-consumedLength).toFixed(3)),
+      };
+      consumedLength += length;
+      return segment;
+    });
+
+  overviewChart.innerHTML = `
+    <article class="detail-chart-card overview-chart-card">
+      <div class="detail-chart-header">
+        <div>
+          <h3 class="detail-chart-title">Status-Verteilung</h3>
+          <p class="detail-chart-subtitle">Einfacher Überblick über Gut, Grenzwertig, Schlecht und Geschützt.</p>
+        </div>
+      </div>
+      <div class="overview-status-layout">
+        <svg class="overview-chart-svg" viewBox="0 0 220 220" role="img" aria-label="Status-Verteilung im Club">
+          <circle class="overview-donut-track" cx="110" cy="110" r="${radius}"></circle>
+          ${segments
+            .map(
+              (segment) => `
+                <circle
+                  class="overview-donut-segment"
+                  cx="110"
+                  cy="110"
+                  r="${radius}"
+                  style="stroke: ${escapeHtml(segment.color)}"
+                  stroke-dasharray="${segment.dasharray}"
+                  stroke-dashoffset="${segment.dashoffset}"
+                >
+                  <title>${escapeHtml(`${getStatusMeta(segment.status).label}: ${formatNumber(segment.count)} Mitglieder`)}</title>
+                </circle>
+              `,
+            )
+            .join('')}
+          <text class="overview-donut-center-value" x="110" y="104" text-anchor="middle">${escapeHtml(formatNumber(chartTotal))}</text>
+          <text class="overview-donut-center-label" x="110" y="126" text-anchor="middle">Mitglieder</text>
+        </svg>
+        <div class="overview-chart-meta">
+          ${counts.unbekannt > 0 ? `<span>Kein Stand: ${escapeHtml(formatNumber(counts.unbekannt))}</span>` : ''}
+        </div>
+        <div class="overview-chart-legend">
+          ${chartStatuses
+            .filter((status) => counts[status] > 0)
+            .map((status) => {
+              const meta = getStatusMeta(status);
+              const count = counts[status];
+
+              return `
+                <span class="overview-chart-legend-item">
+                  <span class="overview-chart-legend-swatch" style="background: ${escapeHtml(getOverviewStatusColor(status))}"></span>
+                  <span>${escapeHtml(meta.label)}</span>
+                  <strong class="overview-chart-legend-value">${escapeHtml(formatNumber(count))}</strong>
+                </span>
+              `;
+            })
+            .join('')}
+        </div>
+      </div>
+    </article>
+  `;
+
+  setOverviewChartState('', false);
+}
+
+function renderOverviewGainChart(rows) {
+  const sourceRows = (Array.isArray(rows) ? rows : [])
+    .filter((row) => row.current_snapshot_date && numberOrNull(row.wins_display) !== null)
+    .sort((left, right) => {
+      const gainComparison = numberOrNull(right.wins_display) - numberOrNull(left.wins_display);
+
+      if (gainComparison !== 0) {
+        return gainComparison;
+      }
+
+      return `${left.player_name ?? ''} ${left.player_tag ?? ''}`.trim().localeCompare(
+        `${right.player_name ?? ''} ${right.player_tag ?? ''}`.trim(),
+        'de',
+        {
+          numeric: true,
+          sensitivity: 'base',
+        },
+      );
+    });
+
+  if (sourceRows.length === 0) {
+    overviewGainChart.innerHTML = '';
+    setOverviewGainState('Noch keine auswertbaren 3v3-Gain-Daten vorhanden.', true);
+    return;
+  }
+
+  const width = 420;
+  const height = 220;
+  const padding = {
+    top: 14,
+    right: 14,
+    bottom: 28,
+    left: 42,
+  };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const gains = sourceRows.map((row) => numberOrNull(row.wins_display));
+  const domain = buildChartDomain(gains, {
+    includeZero: true,
+    minValue: 0,
+  });
+  const pointSpacing = sourceRows.length === 1 ? 0 : plotWidth / (sourceRows.length - 1);
+  const points = sourceRows.map((row, index) => {
+    const gain = numberOrNull(row.wins_display);
+    const x = sourceRows.length === 1
+      ? padding.left + plotWidth / 2
+      : padding.left + pointSpacing * index;
+    const y = scaleChartY(gain, domain, padding.top, plotHeight);
+
+    return {
+      row,
+      gain,
+      x: Number(x.toFixed(2)),
+      y: Number(y.toFixed(2)),
+    };
+  });
+  const thresholdLines = [42, 84]
+    .filter((value) => value >= domain.min && value <= domain.max)
+    .map((value) => ({
+      value,
+      tone: value === 84 ? 'safe' : 'warn',
+      y: Number(scaleChartY(value, domain, padding.top, plotHeight).toFixed(2)),
+    }));
+
+  overviewGainChart.innerHTML = `
+    <article class="detail-chart-card overview-gain-card">
+      <div class="detail-chart-header">
+        <div>
+          <h3 class="detail-chart-title">3v3-Gain (7 Tage)</h3>
+          <p class="detail-chart-subtitle">Ein Punkt pro Mitglied, von links nach rechts absteigend sortiert.</p>
+        </div>
+      </div>
+      <div class="detail-chart-stage">
+        <svg class="detail-chart-svg overview-gain-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="3v3-Gain aller Mitglieder, absteigend sortiert">
+          ${renderChartGrid({
+            plotStartX: padding.left,
+            plotEndX: padding.left + plotWidth,
+            plotHeight,
+            domain,
+            ticks: buildChartTicks(domain, formatNumber),
+          })}
+          ${thresholdLines
+            .map(
+              (line) => `
+                <g class="overview-gain-threshold-group">
+                  <line class="overview-gain-threshold overview-gain-threshold-${escapeHtml(line.tone)}" x1="${padding.left}" y1="${line.y}" x2="${padding.left + plotWidth}" y2="${line.y}"></line>
+                  <text class="overview-gain-threshold-label overview-gain-threshold-label-${escapeHtml(line.tone)}" x="${padding.left + plotWidth}" y="${line.y - 6}" text-anchor="end">${escapeHtml(formatNumber(line.value))}</text>
+                </g>
+              `,
+            )
+            .join('')}
+          ${points
+            .map((point) => `
+              <g
+                class="detail-chart-point-group"
+                tabindex="0"
+                role="button"
+                data-chart-point="true"
+                data-point-title="${escapeHtml(point.row.player_name ?? point.row.player_tag ?? 'Mitglied')}"
+                data-point-delta="${escapeHtml(formatDelta(point.gain))}"
+                data-point-value="${escapeHtml(`Status: ${getStatusMeta(getEffectiveStatusKey(point.row)).label}`)}"
+                data-point-left="${(((point.x) / width) * 100).toFixed(3)}%"
+                data-point-top="${(((point.y) / height) * 100).toFixed(3)}%"
+                aria-label="${escapeHtml(`${point.row.player_name ?? point.row.player_tag ?? 'Mitglied'}: ${formatDelta(point.gain)} in 7 Tagen, Status ${getStatusMeta(getEffectiveStatusKey(point.row)).label}`)}"
+                aria-pressed="false"
+              >
+                <circle class="detail-chart-point-hit" cx="${point.x}" cy="${point.y}" r="12"></circle>
+                <circle class="detail-chart-point-halo" cx="${point.x}" cy="${point.y}" r="8"></circle>
+                <circle
+                  class="detail-chart-point overview-gain-point"
+                  cx="${point.x}"
+                  cy="${point.y}"
+                  r="4.5"
+                  style="fill: ${escapeHtml(getOverviewStatusColor(getEffectiveStatusKey(point.row)))}"
+                ></circle>
+              </g>
+            `)
+            .join('')}
+        </svg>
+        <div class="detail-chart-tooltip" aria-live="polite" hidden></div>
+      </div>
+      <div class="detail-chart-footer overview-gain-footer" aria-hidden="true">
+        <span>Höchster Gain</span>
+        <span>${escapeHtml(`${formatNumber(sourceRows.length)} Mitglieder`)}</span>
+        <span>Niedrigster Gain</span>
+      </div>
+    </article>
+  `;
+
+  setOverviewGainState('', false);
+}
+
+
+function getOverviewStatusColor(status) {
+  switch (status) {
+    case 'kritisch':
+      return 'var(--danger)';
+    case 'fraglich':
+      return 'var(--warn)';
+    case 'geschuetzt':
+      return 'var(--protected)';
+    case 'aktiv':
+      return 'var(--safe)';
+    default:
+      return 'var(--neutral)';
+  }
+}
+
+
+
+
+
+
+
+
+
+function renderDetailCharts(historyRows, previousRow = null) {
   const container = document.getElementById('detail-charts');
 
   if (!Array.isArray(historyRows) || historyRows.length === 0) {
@@ -518,14 +896,13 @@ function renderDetailCharts(historyRows) {
   const rowsAscending = [...historyRows].sort(
     (left, right) => new Date(left.snapshot_date).getTime() - new Date(right.snapshot_date).getTime(),
   );
-  const winsSeries = buildHistorySeries(rowsAscending, 'team_wins');
-  const trophiesSeries = buildHistorySeries(rowsAscending, 'trophies');
+  const winsSeries = buildHistorySeries(rowsAscending, 'team_wins', previousRow?.team_wins);
+  const trophiesSeries = buildHistorySeries(rowsAscending, 'trophies', previousRow?.trophies);
 
   container.innerHTML = [
     renderDetailChartCard({
       title: '3v3 Wins',
       subtitle: 'Gesamtstand je Tag',
-      legendLabel: '3v3 Wins',
       tone: 'brand',
       series: winsSeries,
       tickFormatter: formatNumber,
@@ -535,7 +912,6 @@ function renderDetailCharts(historyRows) {
     renderDetailChartCard({
       title: 'Trophäen',
       subtitle: 'Gesamtstand je Tag',
-      legendLabel: 'Trophäen',
       tone: 'warn',
       series: trophiesSeries,
       tickFormatter: formatNumber,
@@ -545,13 +921,15 @@ function renderDetailCharts(historyRows) {
   ].join('');
 }
 
-function renderDetailChartCard({ title, subtitle, legendLabel, tone, series, tickFormatter, maxValue, xWindowDays }) {
+function renderDetailChartCard({ title, subtitle, tone, series, tickFormatter, maxValue, xWindowDays }) {
   if (!Array.isArray(series) || series.length === 0) {
     return renderDetailChartPlaceholder(`Noch keine Daten für ${title}.`);
   }
 
+  const minValue = Math.min(...series.map((point) => point.value));
   const chart = buildLineChartModel(series, {
     includeZero: false,
+    minValue,
     tickFormatter,
     maxValue,
     xWindowDays,
@@ -564,22 +942,42 @@ function renderDetailChartCard({ title, subtitle, legendLabel, tone, series, tic
           <h4 class="detail-chart-title">${escapeHtml(title)}</h4>
           <p class="detail-chart-subtitle">${escapeHtml(subtitle)}</p>
         </div>
-        <div class="detail-chart-legend" aria-label="Legende">
-          <span class="detail-chart-legend-item">
-            <span class="detail-chart-legend-swatch detail-chart-legend-swatch-${escapeHtml(tone)}"></span>
-            <span>${escapeHtml(legendLabel)}</span>
-          </span>
-        </div>
       </div>
+      <div class="detail-chart-stage">
       <svg class="detail-chart-svg" viewBox="0 0 ${chart.width} ${chart.height}" role="img" aria-label="${escapeHtml(title)}">
         ${renderChartGrid(chart)}
         <path class="detail-chart-line detail-chart-line-${escapeHtml(tone)}" d="${escapeHtml(chart.path)}"></path>
         ${chart.points
-          .map((point) => {
-            return `<circle class="detail-chart-point detail-chart-point-${escapeHtml(tone)}" cx="${point.x}" cy="${point.y}" r="3"></circle>`;
+          .map((point, index) => {
+            const seriesPoint = series[index];
+            const pointData = buildDetailChartPointData(seriesPoint);
+            const pointLeft = `${((point.x / chart.width) * 100).toFixed(3)}%`;
+            const pointTop = `${((point.y / chart.height) * 100).toFixed(3)}%`;
+
+            return `
+              <g
+                class="detail-chart-point-group"
+                tabindex="0"
+                role="button"
+                data-chart-point="true"
+                data-point-title="${escapeHtml(pointData.title)}"
+                data-point-delta="${escapeHtml(pointData.delta)}"
+                data-point-value="${escapeHtml(pointData.value)}"
+                data-point-left="${pointLeft}"
+                data-point-top="${pointTop}"
+                aria-label="${escapeHtml(pointData.ariaLabel)}"
+                aria-pressed="false"
+              >
+                <circle class="detail-chart-point-hit" cx="${point.x}" cy="${point.y}" r="12"></circle>
+                <circle class="detail-chart-point-halo" cx="${point.x}" cy="${point.y}" r="8"></circle>
+                <circle class="detail-chart-point detail-chart-point-${escapeHtml(tone)}" cx="${point.x}" cy="${point.y}" r="4"></circle>
+              </g>
+            `;
           })
           .join('')}
       </svg>
+      <div class="detail-chart-tooltip" aria-live="polite" hidden></div>
+      </div>
       <div class="detail-chart-footer" aria-hidden="true">
         <span>${escapeHtml(chart.firstLabel)}</span>
         <span>${escapeHtml(chart.middleLabel)}</span>
@@ -591,6 +989,28 @@ function renderDetailChartCard({ title, subtitle, legendLabel, tone, series, tic
 
 function renderDetailChartPlaceholder(message) {
   return `<div class="detail-chart-placeholder">${escapeHtml(message)}</div>`;
+}
+
+function buildDetailChartPointData(point) {
+  if (!point) {
+    return {
+      title: '',
+      delta: '',
+      value: '',
+      ariaLabel: '',
+    };
+  }
+
+  const title = point.label ?? formatChartDateLabel(point.date);
+  const value = `Stand: ${formatNumber(point.value)}`;
+  const delta = point.delta === null ? 'Startwert' : `${formatDelta(point.delta)} zum Vortag`;
+
+  return {
+    title,
+    delta,
+    value,
+    ariaLabel: `${title}: ${delta}. ${value}`,
+  };
 }
 
 function prepareDetailHistoryRows(detailRow, historyRows) {
@@ -643,7 +1063,9 @@ function deriveStartValue(currentValue, deltaValue) {
   return current - delta;
 }
 
-function buildHistorySeries(rowsAscending, key) {
+function buildHistorySeries(rowsAscending, key, previousBaselineValue = null) {
+  let previousValue = numberOrNull(previousBaselineValue);
+
   return rowsAscending
     .map((row) => {
       const value = numberOrNull(row[key]);
@@ -653,10 +1075,13 @@ function buildHistorySeries(rowsAscending, key) {
       }
 
       const pointTime = row.snapshot_date;
+      const delta = previousValue === null ? null : value - previousValue;
+      previousValue = value;
 
       return {
         date: pointTime,
         value,
+        delta,
         label: row.is_tracking_start
           ? `Start ${formatChartDateLabel(pointTime)}`
           : formatChartDateLabel(pointTime),
@@ -680,12 +1105,13 @@ function buildLineChartModel(series, options = {}) {
   const values = series.map((point) => point.value);
   const domain = buildChartDomain(values, {
     includeZero: options.includeZero === true,
+    minValue: options.minValue,
     maxValue: options.maxValue,
   });
-  const xStartDate = parseChartAxisDate(series[0]?.date);
-  const xEndDate = addDaysUtc(xStartDate, xWindowDays - 1);
+  const xEndDate = parseChartAxisDate(series.at(-1)?.date ?? series[0]?.date);
+  const xStartDate = addDaysUtc(xEndDate, -(xWindowDays - 1));
   const xRangeMs = Math.max(1, xEndDate.getTime() - xStartDate.getTime());
-  const points = series.map((point, index) => {
+  const points = series.map((point) => {
     const pointDate = parseChartAxisDate(point.date);
     const xOffsetRatio = Math.min(
       1,
@@ -716,6 +1142,7 @@ function buildLineChartModel(series, options = {}) {
 
 function buildChartDomain(values, options = {}) {
   const includeZero = options.includeZero === true;
+  const fixedMin = Number.isFinite(options.minValue) ? Number(options.minValue) : null;
   const fixedMax = Number.isFinite(options.maxValue) ? Number(options.maxValue) : null;
   let rawMin = Math.min(...values);
   let rawMax = Math.max(...values);
@@ -725,6 +1152,10 @@ function buildChartDomain(values, options = {}) {
     rawMax = Math.max(rawMax, 0);
   }
 
+  if (fixedMin !== null) {
+    rawMin = fixedMin;
+  }
+
   if (fixedMax !== null) {
     rawMax = fixedMax;
   }
@@ -732,8 +1163,8 @@ function buildChartDomain(values, options = {}) {
   if (rawMin === rawMax) {
     const padding = Math.max(1, Math.ceil(Math.abs(rawMin || 1) * 0.25));
     return {
-      min: rawMin - padding,
-      max: rawMax,
+      min: fixedMin !== null ? rawMin : rawMin - padding,
+      max: rawMax + padding,
     };
   }
 
@@ -741,13 +1172,13 @@ function buildChartDomain(values, options = {}) {
 
   if (fixedMax !== null) {
     return {
-      min: rawMin - padding,
+      min: fixedMin !== null ? rawMin : rawMin - padding,
       max: rawMax,
     };
   }
 
   return {
-    min: rawMin - padding,
+    min: fixedMin !== null ? rawMin : rawMin - padding,
     max: rawMax + padding,
   };
 }
@@ -811,11 +1242,22 @@ function renderChartGrid(chart) {
     .join('');
 }
 
+function setOverviewChartState(message, visible) {
+  overviewChartState.textContent = message;
+  overviewChartState.classList.toggle('is-visible', visible);
+}
+
+function setOverviewGainState(message, visible) {
+  overviewGainState.textContent = message;
+  overviewGainState.classList.toggle('is-visible', visible);
+}
+
 function setDetailHistoryState(message, visible) {
   const element = document.getElementById('detail-history-state');
   element.textContent = message;
   element.classList.toggle('is-visible', visible);
 }
+
 
 function matchesStatus(row) {
   const selectedStatus = statusFilter.value;
@@ -831,6 +1273,7 @@ function syncDetailHistoryRangeButtons() {
     button.setAttribute('aria-pressed', String(isActive));
   });
 }
+
 
 function matchesSearch(row) {
   const term = searchInput.value.trim().toLowerCase();
@@ -860,9 +1303,12 @@ function syncSortControls() {
   }
 
   if (mobileSortDirection) {
-    const label = sortState.direction === 'asc' ? 'Aufsteigend' : 'Absteigend';
+    const isAscending = sortState.direction === 'asc';
+    const label = isAscending ? '↑' : '↓';
+    const directionText = isAscending ? 'aufsteigend' : 'absteigend';
     mobileSortDirection.textContent = label;
-    mobileSortDirection.setAttribute('aria-label', `${sortState.key} ${label.toLowerCase()} sortieren`);
+    mobileSortDirection.setAttribute('aria-label', `${sortState.key} ${directionText} sortieren`);
+    mobileSortDirection.setAttribute('title', isAscending ? 'Aufsteigend' : 'Absteigend');
   }
 
   sortButtons.forEach((button) => {
@@ -943,7 +1389,7 @@ function getSortValue(row, key) {
     case 'status':
       return getStatusSortRank(getEffectiveStatusKey(row));
     case 'last_progress_date':
-      return parseSortDateValue(row.last_progress_date);
+      return parseSortDateValue(row.last_progress_at ?? row.last_progress_date);
     case 'wins_display':
       return numberOrNull(row.wins_display);
     case 'team_wins_total':
@@ -1174,31 +1620,60 @@ function renderChipMarkup(chip) {
 }
 
 function getEffectiveStatusKey(row) {
-  if (isRealNewcomer(row)) {
-    return row.protection_active === true ? 'geschuetzt' : 'aktiv';
-  }
-
-  return row.status;
+  return getComputedStatusKey(row);
 }
 
 function getDisplayStatusChips(row) {
+  const effectiveStatus = getComputedStatusKey(row);
+
   if (isRealNewcomer(row)) {
     const chips = [statusMetaToChip(getStatusMeta('neu'))];
 
-    if (row.protection_active === true) {
-      chips.push(statusMetaToChip(getStatusMeta('geschuetzt')));
+    if (effectiveStatus && effectiveStatus !== 'unbekannt') {
+      chips.push(statusMetaToChip(getStatusMeta(effectiveStatus)));
     }
 
     return chips;
   }
 
-  return [statusMetaToChip(getStatusMeta(row.status))];
+  return [statusMetaToChip(getStatusMeta(effectiveStatus))];
+}
+
+function getComputedStatusKey(row) {
+  if (row.protection_active === true) {
+    return 'geschuetzt';
+  }
+
+  if (!row.current_snapshot_date) {
+    return 'unbekannt';
+  }
+
+  const winsGrowth = numberOrNull(row.wins_display);
+  const daysWithoutProgress = numberOrNull(row.days_no_progress);
+
+  if (daysWithoutProgress !== null && daysWithoutProgress >= 3) {
+    return 'kritisch';
+  }
+
+  if (winsGrowth !== null && winsGrowth < 42) {
+    return 'kritisch';
+  }
+
+  if (daysWithoutProgress !== null && daysWithoutProgress >= 2) {
+    return 'fraglich';
+  }
+
+  if (winsGrowth !== null && winsGrowth < 84) {
+    return 'fraglich';
+  }
+
+  return 'aktiv';
 }
 
 function statusMetaToChip(meta) {
   return {
     text: meta.label,
-    tone: meta.tone,
+    tone: meta.className === 'chip-brand' ? 'protected' : meta.tone,
   };
 }
 
@@ -1207,13 +1682,13 @@ function getStatusMeta(status) {
     case 'neu':
       return { label: 'Neu', className: 'chip-neutral', tone: 'neutral' };
     case 'kritisch':
-      return { label: 'Kritisch', className: 'chip-danger', tone: 'danger' };
+      return { label: 'Schlecht', className: 'chip-danger', tone: 'danger' };
     case 'fraglich':
-      return { label: 'Beobachten', className: 'chip-warn', tone: 'warn' };
+      return { label: 'Grenzwertig', className: 'chip-warn', tone: 'warn' };
     case 'geschuetzt':
       return { label: 'Geschützt', className: 'chip-brand', tone: 'brand' };
     case 'aktiv':
-      return { label: 'Aktiv', className: 'chip-safe', tone: 'safe' };
+      return { label: 'Gut', className: 'chip-safe', tone: 'safe' };
     case 'unbekannt':
     default:
       return { label: '?', className: 'chip-neutral', tone: 'neutral' };
@@ -1244,8 +1719,14 @@ function isRealNewcomer(row) {
   return typeof row.days_in_club === 'number' && row.days_in_club < 7;
 }
 
-function formatWindowLabel(label) {
-  return label === 'seit_start' ? 'seit Start' : '7 Tage';
+function formatLastProgressLabel(dateValue, timestampValue) {
+  const recentLabel = formatRecentProgressLabel(timestampValue);
+
+  if (recentLabel) {
+    return recentLabel;
+  }
+
+  return formatRelativeDayLabel(dateValue);
 }
 
 function formatRelativeDayLabel(value) {
@@ -1266,6 +1747,38 @@ function formatRelativeDayLabel(value) {
   }
 
   return `vor ${formatNumber(diffDays)} Tagen`;
+}
+
+function formatRecentProgressLabel(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = typeof value === 'string' ? new Date(value) : value;
+  const time = date.getTime();
+
+  if (!Number.isFinite(time)) {
+    return null;
+  }
+
+  const diffMs = Math.max(0, Date.now() - time);
+
+  if (diffMs >= 86_400_000) {
+    return null;
+  }
+
+  const diffMinutes = Math.floor(diffMs / 60_000);
+
+  if (diffMinutes < 1) {
+    return 'gerade eben';
+  }
+
+  if (diffMinutes < 60) {
+    return `vor ${formatCountLabel(diffMinutes, 'Minute', 'Minuten')}`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  return `vor ${formatCountLabel(diffHours, 'Stunde', 'Stunden')}`;
 }
 
 function formatTrackedDaysLabel(value) {
@@ -1300,7 +1813,7 @@ function formatChartDateLabel(value) {
   return new Intl.DateTimeFormat('de-DE', {
     day: '2-digit',
     month: '2-digit',
-  }).format(new Date(value));
+  }).format(new Date(value)).slice(0, -1);
 }
 
 function formatRelativeTime(value) {
@@ -1330,6 +1843,11 @@ function formatDateTime(value) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(value);
+}
+
+function formatCountLabel(value, singular, plural) {
+  const numeric = Number(value);
+  return `${formatNumber(numeric)} ${numeric === 1 ? singular : plural}`;
 }
 
 function escapeHtml(value) {

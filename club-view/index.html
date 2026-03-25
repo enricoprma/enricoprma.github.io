@@ -14,7 +14,7 @@
     (() => {
       try {
         const storedTheme = localStorage.getItem('club-view-theme');
-        document.documentElement.dataset.theme = storedTheme === 'arena' ? 'arena' : 'club';
+        document.documentElement.dataset.theme = ['club', 'arena', 'brawl'].includes(storedTheme) ? storedTheme : 'club';
       } catch {
         document.documentElement.dataset.theme = 'club';
       }
@@ -30,16 +30,17 @@
         <p class="eyebrow">Brawl Stars Club Dashboard</p>
         <h1>CBA Veterans</h1>
         <p class="subline">
-          Read-only Übersicht für Aktivität, Schutzstatus und Kick-Kandidaten.
+          Read-only &Uuml;bersicht f&uuml;r Aktivit&auml;t, Schutzstatus und Kick-Kandidaten.
         </p>
       </div>
       <div class="hero-side">
         <div class="hero-actions">
           <div class="theme-switch">
             <span class="theme-switch-label">Mode</span>
-            <div class="theme-switcher" role="group" aria-label="Light oder Dark Mode auswählen">
+            <div class="theme-switcher" role="group" aria-label="Light, Dark oder Brawl Mode ausw&auml;hlen">
               <button class="theme-option" type="button" data-theme-value="club" aria-pressed="true">Light</button>
               <button class="theme-option" type="button" data-theme-value="arena" aria-pressed="false">Dark</button>
+              <button class="theme-option" type="button" data-theme-value="brawl" aria-pressed="false">Brawl</button>
             </div>
           </div>
           <p id="data-state" class="refresh-state">Stand: -</p>
@@ -48,117 +49,152 @@
       </div>
     </header>
 
-    <section class="panel summary-panel">
-      <div class="summary-grid">
-        <article class="metric-card">
-          <span class="metric-label">Mitglieder</span>
-          <strong id="metric-members" class="metric-value">-</strong>
-        </article>
-        <article class="metric-card">
-          <span class="metric-label">Beobachten</span>
-          <strong id="metric-watch" class="metric-value">-</strong>
-        </article>
-        <article class="metric-card">
-          <span class="metric-label">Kritisch</span>
-          <strong id="metric-critical" class="metric-value">-</strong>
-        </article>
-        <article class="metric-card metric-card-wide">
-          <span class="metric-label">Letzter Stand</span>
-          <strong id="metric-snapshot" class="metric-value metric-date">-</strong>
-        </article>
+    <section class="panel overview-panel">
+      <div class="overview-panel-header">
+        <div class="overview-last-stand">
+          <span class="overview-last-stand-label">Letzter Stand</span>
+          <strong id="metric-snapshot" class="overview-last-stand-value">-</strong>
+        </div>
       </div>
-    </section>
-
-    <section class="panel toolbar">
-      <div class="toolbar-block">
-        <label for="status-filter">Status</label>
-        <select id="status-filter">
-          <option value="all">Alle</option>
-          <option value="kritisch">Kritisch</option>
-          <option value="fraglich">Beobachten</option>
-          <option value="aktiv">Aktiv</option>
-          <option value="geschuetzt">Geschützt</option>
-        </select>
-      </div>
-      <div class="toolbar-block mobile-sort-block">
-          <button id="mobile-sort-direction" class="ghost-button" type="button">Absteigend</button>
+      <div class="overview-visuals">
+        <div class="overview-main">
+          <div id="overview-chart-state" class="detail-history-state is-visible">Lade Status-Verteilung ...</div>
+          <div id="overview-chart"></div>
+        </div>
+        <div class="overview-gain-panel">
+          <div id="overview-gain-state" class="detail-history-state is-visible">Lade 3v3-Gain ...</div>
+          <div id="overview-gain-chart"></div>
         </div>
       </div>
     </section>
 
-    <section class="panel search-panel">
-      <div class="toolbar-block">
-        <label for="search-input">Suche</label>
-        <input id="search-input" type="search" placeholder="Name oder Tag" />
-      </div>
-    </section>
+    <section class="panel members-panel">
+      <section class="search-panel">
+        <div class="toolbar-block">
+          <label for="search-input">Suche</label>
+          <input id="search-input" type="search" placeholder="Name oder Tag" />
+        </div>
+      </section>
 
-    <section class="table-panel">
-      <div id="table-state" class="table-state">Lade Daten ...</div>
-      <div id="mobile-list" class="mobile-list"></div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="name">
-                  <span class="sort-label">Name</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="status">
-                  <span class="sort-label">Status</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="last_progress_date">
-                  <span class="sort-label">Letzter 3v3 Sieg</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="wins_display">
-                  <span class="sort-label">3v3-Gain (7 Tage)</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="team_wins_total">
-                  <span class="sort-label">3v3 Siege</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="trophies_total">
-                  <span class="sort-label">Trophäen</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="trophies_display">
-                  <span class="sort-label">Trophy-Gain (7 Tage)</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="tracking_start_date">
-                  <span class="sort-label">Tracking seit</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th aria-sort="none">
-                <button class="sort-button" type="button" data-sort-key="reason">
-                  <span class="sort-label">Notizen</span>
-                  <span class="sort-icon" aria-hidden="true"></span>
-                </button>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="dashboard-body"></tbody>
-        </table>
-      </div>
+      <section class="toolbar">
+        <div class="toolbar-row toolbar-row-filters">
+          <div class="toolbar-block">
+            <label for="status-filter">Status</label>
+            <select id="status-filter">
+              <option value="all">Alle</option>
+              <option value="kritisch">Kritisch</option>
+              <option value="fraglich">Beobachten</option>
+              <option value="aktiv">Aktiv</option>
+              <option value="geschuetzt">Gesch&uuml;tzt</option>
+            </select>
+          </div>
+          <div class="toolbar-block">
+            <label for="reason-filter">Notizen</label>
+            <select id="reason-filter">
+              <option value="all">Alle</option>
+              <option value="no_snapshot">Kein Stand</option>
+              <option value="no_progress">Kein Progress</option>
+              <option value="no_gain">Kein 3v3-Zuwachs</option>
+              <option value="lt20">&lt; 20 3v3-Gain</option>
+              <option value="lt42">&lt; 42 3v3-Gain</option>
+              <option value="below_goal">Unter Wochenziel</option>
+              <option value="min_3v3">Unter Mindest-3v3</option>
+              <option value="leadership">Leadership</option>
+              <option value="protected">Gesch&uuml;tzt</option>
+            </select>
+          </div>
+        </div>
+        <div class="toolbar-row toolbar-row-sort">
+          <div class="toolbar-block mobile-sort-block">
+            <label for="mobile-sort-key">Sortieren nach</label>
+            <div class="mobile-sort-controls">
+              <select id="mobile-sort-key">
+                <option value="wins_display">3v3-Gain (7 Tage)</option>
+                <option value="status">Status</option>
+                <option value="last_progress_date">Letzter 3v3 Sieg</option>
+                <option value="team_wins_total">3v3 Siege</option>
+                <option value="trophies_total">Troph&auml;en</option>
+                <option value="trophies_display">Trophy-Gain (7 Tage)</option>
+                <option value="tracking_start_date">Tracking seit</option>
+                <option value="reason">Notizen</option>
+                <option value="name">Name</option>
+              </select>
+              <button id="mobile-sort-direction" class="ghost-button sort-direction-button" type="button"
+                aria-label="Aufsteigend sortieren" title="Aufsteigend">
+                ↑
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="table-panel">
+        <div id="table-state" class="table-state">Lade Daten ...</div>
+        <div id="mobile-list" class="mobile-list"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="name">
+                    <span class="sort-label">Name</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="status">
+                    <span class="sort-label">Status</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="last_progress_date">
+                    <span class="sort-label">Letzter 3v3 Sieg</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="wins_display">
+                    <span class="sort-label">3v3-Gain (7 Tage)</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="team_wins_total">
+                    <span class="sort-label">3v3 Siege</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="trophies_total">
+                    <span class="sort-label">Troph&auml;en</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="trophies_display">
+                    <span class="sort-label">Trophy-Gain (7 Tage)</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="tracking_start_date">
+                    <span class="sort-label">Tracking seit</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="reason">
+                    <span class="sort-label">Notizen</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-body"></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -171,15 +207,15 @@
           <h2 id="detail-name" class="detail-name">-</h2>
           <p id="detail-tag" class="detail-tag">-</p>
         </div>
-        <button id="detail-close" class="detail-close" type="button" aria-label="Detailansicht schließen">
-          <span aria-hidden="true">×</span>
+        <button id="detail-close" class="detail-close" type="button" aria-label="Detailansicht schlie&szlig;en">
+          <span aria-hidden="true">&times;</span>
         </button>
       </header>
 
       <div id="detail-status-row" class="chip-list detail-status-row"></div>
 
       <section class="detail-section">
-        <h3>Überblick</h3>
+        <h3>&Uuml;berblick</h3>
         <div id="detail-metrics" class="detail-metrics"></div>
       </section>
 
@@ -190,20 +226,14 @@
 
       <section class="detail-section">
         <h3>Verlauf</h3>
-        <div id="detail-history-state" class="detail-history-state">Wähle einen Spieler aus.</div>
-        <div id="detail-charts" class="detail-charts"></div>
-        <div class="detail-history-wrap">
-          <table class="detail-history-table">
-            <thead>
-              <tr>
-                <th>Datum</th>
-                <th>Trophäen</th>
-                <th>3v3 Wins</th>
-              </tr>
-            </thead>
-            <tbody id="detail-history-body"></tbody>
-          </table>
+        <div class="detail-range-controls" role="group" aria-label="Verlaufszeitraum">
+          <button class="ghost-button detail-range-button is-active" type="button" data-history-days="7"
+            aria-pressed="true">7 Tage</button>
+          <button class="ghost-button detail-range-button" type="button" data-history-days="30" aria-pressed="false">30
+            Tage</button>
         </div>
+        <div id="detail-history-state" class="detail-history-state">W&auml;hle einen Spieler aus.</div>
+        <div id="detail-charts" class="detail-charts"></div>
       </section>
     </div>
   </aside>
