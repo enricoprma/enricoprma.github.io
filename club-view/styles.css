@@ -41,6 +41,7 @@
   --overlay: rgba(24, 22, 19, 0.42);
   --chart-grid: rgba(33, 31, 26, 0.1);
   --chart-axis: rgba(95, 90, 81, 0.7);
+  --chart-label-size: 10px;
   --chart-point-selected-ring: rgba(31, 31, 26, 0.82);
   --chart-point-selected-halo: rgba(255, 250, 243, 0.96);
   --inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.5);
@@ -91,6 +92,7 @@
   --overlay: rgba(4, 8, 12, 0.62);
   --chart-grid: rgba(132, 155, 180, 0.14);
   --chart-axis: rgba(186, 199, 214, 0.72);
+  --chart-label-size: 10px;
   --chart-point-selected-ring: rgba(237, 243, 248, 0.94);
   --chart-point-selected-halo: rgba(21, 32, 48, 0.98);
   --inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -142,6 +144,7 @@
   --overlay: rgba(4, 12, 28, 0.58);
   --chart-grid: rgba(255, 255, 255, 0.14);
   --chart-axis: rgba(234, 240, 255, 0.76);
+  --chart-label-size: 10px;
   --chart-point-selected-ring: rgba(255, 247, 223, 0.96);
   --chart-point-selected-halo: rgba(18, 83, 174, 0.98);
   --inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -361,9 +364,17 @@ h1 {
 }
 
 .overview-main,
-.overview-gain-panel {
+.overview-gain-panel,
+.overview-club-gain-panel {
   display: grid;
   gap: 14px;
+}
+
+.overview-club-gain-panel {
+  display: grid;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--surface-border);
 }
 
 .overview-gain-panel {
@@ -491,10 +502,43 @@ h1 {
   padding: 14px;
 }
 
+.overview-club-gain-card {
+  padding: 14px;
+}
+
 .overview-gain-svg {
   width: 100%;
   height: auto;
   overflow: visible;
+}
+
+.overview-club-gain-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.overview-club-gain-range {
+  margin-bottom: 0;
+}
+
+.overview-club-gain-point {
+  fill: var(--brand);
+  stroke: var(--surface-strong);
+  stroke-width: 1.5;
+}
+
+.overview-club-gain-average-line {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  opacity: 0.8;
+}
+
+.overview-club-gain-average-label {
+  fill: var(--text-muted);
+  font-size: var(--chart-label-size);
+  font-weight: 600;
 }
 
 .overview-gain-threshold {
@@ -513,7 +557,7 @@ h1 {
 
 .overview-gain-threshold-label {
   fill: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--chart-label-size);
 }
 
 .overview-gain-threshold-label-warn {
@@ -1135,7 +1179,7 @@ th[aria-sort='descending'] .sort-icon::after {
 
 .detail-chart-axis-label {
   fill: var(--chart-axis);
-  font-size: 10px;
+  font-size: var(--chart-label-size);
 }
 
 .detail-chart-line {
@@ -1324,15 +1368,21 @@ th[aria-sort='descending'] .sort-icon::after {
   }
 
   .overview-visuals {
-    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
   }
 
-  .overview-gain-panel {
+  .overview-gain-panel,
+  .overview-club-gain-panel {
     padding-top: 0;
     padding-left: 18px;
     border-top: 0;
     border-left: 1px solid var(--surface-border);
+  }
+
+  .overview-club-gain-card .detail-chart-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
   }
 
   .mobile-list {

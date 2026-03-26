@@ -38,8 +38,8 @@
           <div class="theme-switch">
             <span class="theme-switch-label">Mode</span>
             <div class="theme-switcher" role="group" aria-label="Light, Dark oder Brawl Mode ausw&auml;hlen">
-              <button class="theme-option" type="button" data-theme-value="club" aria-pressed="true">Light</button>
-              <button class="theme-option" type="button" data-theme-value="arena" aria-pressed="false">Dark</button>
+              <button class="theme-option" type="button" data-theme-value="club" aria-pressed="false">Light</button>
+              <button class="theme-option" type="button" data-theme-value="arena" aria-pressed="true">Dark</button>
               <button class="theme-option" type="button" data-theme-value="brawl" aria-pressed="false">Brawl</button>
             </div>
           </div>
@@ -65,6 +65,10 @@
           <div id="overview-gain-state" class="detail-history-state is-visible">Lade 3v3-Gain ...</div>
           <div id="overview-gain-chart"></div>
         </div>
+        <div class="overview-club-gain-panel">
+          <div id="overview-club-gain-state" class="detail-history-state is-visible">Lade Club-Gain ...</div>
+          <div id="overview-club-gain-chart"></div>
+        </div>
       </div>
     </section>
 
@@ -82,9 +86,10 @@
             <label for="status-filter">Status</label>
             <select id="status-filter">
               <option value="all">Alle</option>
-              <option value="kritisch">Kritisch</option>
-              <option value="fraglich">Beobachten</option>
-              <option value="aktiv">Aktiv</option>
+              <option value="neu">Neu</option>
+              <option value="kritisch">Schlecht</option>
+              <option value="fraglich">Grenzwertig</option>
+              <option value="aktiv">Gut</option>
               <option value="geschuetzt">Gesch&uuml;tzt</option>
             </select>
           </div>
@@ -95,9 +100,8 @@
               <option value="no_snapshot">Kein Stand</option>
               <option value="no_progress">Kein Progress</option>
               <option value="no_gain">Kein 3v3-Zuwachs</option>
-              <option value="lt20">&lt; 20 3v3-Gain</option>
-              <option value="lt42">&lt; 42 3v3-Gain</option>
-              <option value="below_goal">Unter Wochenziel</option>
+              <option value="critical_gain">Unter Mindestziel</option>
+              <option value="below_goal">Unter Zielwert</option>
               <option value="min_3v3">Unter Mindest-3v3</option>
               <option value="leadership">Leadership</option>
               <option value="protected">Gesch&uuml;tzt</option>
@@ -109,12 +113,12 @@
             <label for="mobile-sort-key">Sortieren nach</label>
             <div class="mobile-sort-controls">
               <select id="mobile-sort-key">
-                <option value="wins_display">3v3-Gain (7 Tage)</option>
+                <option value="wins_display">3v3-Gain</option>
                 <option value="status">Status</option>
                 <option value="last_progress_date">Letzter 3v3 Sieg</option>
                 <option value="team_wins_total">3v3 Siege</option>
                 <option value="trophies_total">Troph&auml;en</option>
-                <option value="trophies_display">Trophy-Gain (7 Tage)</option>
+                <option value="trophies_display">Trophy-Gain</option>
                 <option value="tracking_start_date">Tracking seit</option>
                 <option value="reason">Notizen</option>
                 <option value="name">Name</option>
@@ -155,7 +159,7 @@
                 </th>
                 <th aria-sort="none">
                   <button class="sort-button" type="button" data-sort-key="wins_display">
-                    <span class="sort-label">3v3-Gain (7 Tage)</span>
+                    <span class="sort-label">3v3-Gain</span>
                     <span class="sort-icon" aria-hidden="true"></span>
                   </button>
                 </th>
@@ -173,7 +177,7 @@
                 </th>
                 <th aria-sort="none">
                   <button class="sort-button" type="button" data-sort-key="trophies_display">
-                    <span class="sort-label">Trophy-Gain (7 Tage)</span>
+                    <span class="sort-label">Trophy-Gain</span>
                     <span class="sort-icon" aria-hidden="true"></span>
                   </button>
                 </th>
@@ -228,7 +232,7 @@
         <h3>Verlauf</h3>
         <div class="detail-range-controls" role="group" aria-label="Verlaufszeitraum">
           <button class="ghost-button detail-range-button is-active" type="button" data-history-days="7"
-            aria-pressed="true">7 Tage</button>
+            aria-pressed="true">Fenster</button>
           <button class="ghost-button detail-range-button" type="button" data-history-days="30" aria-pressed="false">30
             Tage</button>
         </div>
