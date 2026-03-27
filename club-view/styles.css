@@ -1113,6 +1113,152 @@ th[aria-sort='descending'] .sort-icon::after {
   color: var(--text-muted);
 }
 
+.detail-battles {
+  display: grid;
+  gap: 10px;
+}
+
+.detail-battles-empty {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface-strong);
+  border: 1px solid var(--surface-border);
+  color: var(--text-muted);
+}
+
+.detail-battle-card {
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface-strong);
+  border: 1px solid var(--surface-border);
+  overflow: hidden;
+}
+
+.detail-battle-card-safe {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--safe) 28%, transparent) 0%, transparent 70%),
+    var(--surface-strong);
+}
+
+.detail-battle-card-danger {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--danger) 28%, transparent) 0%, transparent 70%),
+    var(--surface-strong);
+}
+
+.detail-battle-row {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 10px;
+  min-width: 0;
+}
+
+.detail-battle-avatar {
+  min-width: 78px;
+  align-self: stretch;
+}
+
+.detail-battle-avatar-image,
+.detail-battle-media-fallback {
+  display: block;
+  width: 78px;
+  height: 100%;
+  min-height: 64px;
+  border-radius: 12px;
+  border: 1px solid var(--surface-border);
+  object-fit: cover;
+  background: var(--surface);
+}
+
+.detail-battle-media-fallback {
+  display: grid;
+  place-items: center;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.detail-battle-copy {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  align-self: center;
+}
+
+.detail-battle-meta-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.detail-battle-inline-media {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+}
+
+.detail-battle-inline-image,
+.detail-battle-inline-fallback {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.detail-battle-inline-image {
+  object-fit: contain;
+}
+
+.detail-battle-inline-fallback {
+  display: grid;
+  place-items: center;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.detail-battle-inline-fallback[hidden] {
+  display: none !important;
+}
+
+.detail-battle-mode,
+.detail-battle-map {
+  min-width: 0;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+.detail-battle-mode {
+  font-size: 0.92rem;
+}
+
+.detail-battle-time {
+  justify-self: end;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  align-self: center;
+}
+
+.detail-battle-outcome {
+  justify-self: start;
+  white-space: nowrap;
+  border-radius: 12px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.detail-battle-map {
+  color: var(--text-muted);
+}
+
 .detail-range-controls {
   display: flex;
   flex-wrap: wrap;
@@ -1328,13 +1474,30 @@ th[aria-sort='descending'] .sort-icon::after {
   }
 
   .detail-panel {
-    width: min(460px, calc(100vw - 24px));
-    padding: 16px;
+    width: min(760px, calc(100vw - 24px));
+    padding: 14px;
   }
 
   .detail-panel-inner {
-    padding: 24px;
+    padding: 24px 26px;
     border-radius: 28px;
+  }
+
+  .detail-charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .detail-battle-row {
+    grid-template-columns: 78px minmax(0, 1fr) auto;
+    align-items: stretch;
+  }
+
+  .detail-battle-mode,
+  .detail-battle-map {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -1342,6 +1505,15 @@ th[aria-sort='descending'] .sort-icon::after {
   .shell {
     width: min(calc(100vw - 24px), 1480px);
     padding: 32px 0 56px;
+  }
+
+  .detail-panel {
+    width: min(980px, calc(100vw - 32px));
+    padding: 16px;
+  }
+
+  .detail-panel-inner {
+    padding: 28px 30px;
   }
 
   .hero {

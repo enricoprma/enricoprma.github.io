@@ -21,11 +21,40 @@ const detailBackdrop = document.getElementById('detail-backdrop');
 const detailPanel = document.getElementById('detail-panel');
 const detailCloseButton = document.getElementById('detail-close');
 const detailCharts = document.getElementById('detail-charts');
+const detailBattlesState = document.getElementById('detail-battles-state');
+const detailBattles = document.getElementById('detail-battles');
 const detailRangeButtons = [...document.querySelectorAll('[data-history-days]')];
 const MAX_DETAIL_HISTORY_DAYS = 30;
 const MAX_OVERVIEW_CLUB_GAIN_DAYS = 30;
 const CHART_POINT_RADIUS = 4.5;
 const CHART_INLINE_LABEL_OFFSET = 6;
+const BRAWL_HOCKEY_MAPS = new Set([
+  'Below Zero',
+  'Bouncy Bowl',
+  'Cool Box',
+  'H is for Holiday',
+  'Hyperspace',
+  'Slippery Slap',
+  'Starr Garden',
+  'Super Center',
+  'Cabin Fever',
+  'Tip Toe',
+  'Air Sports Arena',
+  'Puck Man',
+  'Puck Palace',
+  'Slapshot Stadium',
+  'Cold Snap',
+  'Frostbite Rink',
+  'Massive Meltdown',
+  'Snowcone Square',
+]);
+const BRAWL_ARENA_MAPS = new Set([
+  'Arena of Glory',
+  'Kaiju Lake',
+  'Knockout Grounds',
+  'Mirage Arena',
+  'The Smackdome',
+]);
 const DATE_FORMATTERS = {
   dateLabel: new Intl.DateTimeFormat('de-DE', {
     dateStyle: 'medium',
@@ -48,8 +77,10 @@ let selectedDetailHistoryDays = primaryHistoryWindowDays;
 let selectedOverviewClubGainDays = primaryHistoryWindowDays;
 let currentDetailRow = null;
 let currentDetailHistoryRows = [];
+let currentDetailBattleRows = [];
 let currentOverviewClubHistoryRows = [];
 const historyCache = new Map();
+const battleHistoryCache = new Map();
 let sortState = {
   key: 'wins_display',
   direction: 'desc',
@@ -161,6 +192,7 @@ async function loadDashboard() {
     const rows = await fetchDashboardRows(config);
     allRows = rows;
     historyCache.clear();
+    battleHistoryCache.clear();
     currentOverviewClubHistoryRows = [];
     const nextPrimaryHistoryWindowDays = getPrimaryHistoryWindowDays(rows);
     const followsPrimaryHistoryWindow = selectedDetailHistoryDays === primaryHistoryWindowDays;
@@ -326,6 +358,52 @@ async function fetchPlayerHistory(currentConfig, clubTag, playerId) {
 
   const rows = await response.json();
   historyCache.set(cacheKey, rows);
+  return rows;
+}
+
+async function fetchPlayerBattles(currentConfig, clubTag, playerId) {
+  const cacheKey = `${clubTag}:${playerId}`;
+
+  if (battleHistoryCache.has(cacheKey)) {
+    return battleHistoryCache.get(cacheKey);
+  }
+
+  const rows = [];
+  const pageSize = 1000;
+  let offset = 0;
+
+  while (true) {
+    const url = new URL(`${stripTrailingSlash(currentConfig.supabaseUrl)}/rest/v1/player_battle_history`);
+    url.searchParams.set('select', 'battle_time,mode,mode_name,mode_image_url,map,map_image_url,result,is_victory,is_3v3,placement,brawler_id,brawler_name,event_id');
+    url.searchParams.set('club_tag', `eq.${normalizeClubTag(clubTag)}`);
+    url.searchParams.set('player_id', `eq.${playerId}`);
+    url.searchParams.set('order', 'battle_time.desc');
+    url.searchParams.set('limit', String(pageSize));
+    url.searchParams.set('offset', String(offset));
+
+    const response = await fetch(url, {
+      headers: {
+        apikey: currentConfig.supabaseAnonKey,
+        Authorization: `Bearer ${currentConfig.supabaseAnonKey}`,
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase Battle-Verlauf antwortet mit ${response.status}`);
+    }
+
+    const pageRows = await response.json();
+    rows.push(...pageRows);
+
+    if (pageRows.length < pageSize) {
+      break;
+    }
+
+    offset += pageSize;
+  }
+
+  battleHistoryCache.set(cacheKey, rows);
   return rows;
 }
 
@@ -719,30 +797,42 @@ async function openDetailPanel(row, options = {}) {
   const requestToken = ++detailRequestToken;
 
   renderDetailHeader(row);
-  renderDetailMetrics(row);
+  renderDetailMetrics(row, null);
   renderDetailReasons(row);
+  detailBattles.innerHTML = '';
+  setDetailBattlesState('Lade Runden ...', true);
   document.getElementById('detail-charts').innerHTML = renderDetailChartPlaceholder('Lade Verlaufscharts ...');
   setDetailHistoryState('Lade Verlauf ...', true);
   openDetailChrome();
 
-  try {
-    const history = await fetchPlayerHistory(config, row.club_tag, row.player_id);
+  const [historyResult, battlesResult] = await Promise.allSettled([
+    fetchPlayerHistory(config, row.club_tag, row.player_id),
+    fetchPlayerBattles(config, row.club_tag, row.player_id),
+  ]);
 
-    if (requestToken !== detailRequestToken) {
-      return;
-    }
+  if (requestToken !== detailRequestToken) {
+    return;
+  }
 
-    currentDetailHistoryRows = history;
-    renderDetailHistory(row, history);
-  } catch (error) {
-    console.error(error);
-    if (requestToken !== detailRequestToken) {
-      return;
-    }
-
+  if (historyResult.status === 'fulfilled') {
+    currentDetailHistoryRows = historyResult.value;
+    renderDetailHistory(row, historyResult.value);
+  } else {
+    console.error(historyResult.reason);
     currentDetailHistoryRows = [];
     setDetailHistoryState('Verlauf konnte nicht geladen werden.', true);
     document.getElementById('detail-charts').innerHTML = renderDetailChartPlaceholder('Verlaufscharts konnten nicht geladen werden.');
+  }
+
+  if (battlesResult.status === 'fulfilled') {
+    currentDetailBattleRows = battlesResult.value;
+    renderDetailMetrics(row, computeThreeVsThreeWinrate(battlesResult.value));
+    renderDetailBattles(battlesResult.value);
+  } else {
+    console.error(battlesResult.reason);
+    currentDetailBattleRows = [];
+    setDetailBattlesState('Runden konnten nicht geladen werden.', true);
+    detailBattles.innerHTML = '';
   }
 
   if (!options.keepOpen) {
@@ -761,6 +851,7 @@ function closeDetailPanel() {
   selectedPlayerId = null;
   currentDetailRow = null;
   currentDetailHistoryRows = [];
+  currentDetailBattleRows = [];
   detailBackdrop.hidden = true;
   detailPanel.hidden = true;
   detailPanel.setAttribute('aria-hidden', 'true');
@@ -776,7 +867,7 @@ function renderDetailHeader(row) {
   document.getElementById('detail-status-row').innerHTML = chips.map(renderChipMarkup).join('');
 }
 
-function renderDetailMetrics(row) {
+function renderDetailMetrics(row, battleStats) {
   const growthWindowLabel = getGrowthWindowLabel(getGrowthWindowDaysForRow(row));
   const metrics = [
     { label: 'Letzter 3v3 Sieg', value: formatLastProgressLabel(row.last_progress_date, row.last_progress_at) },
@@ -784,7 +875,11 @@ function renderDetailMetrics(row) {
       label: `3v3-Gain (${growthWindowLabel})`,
       value: formatDelta(row.wins_display),
     },
-    { label: '3v3 Siege', value: formatNumber(row.team_wins_total) },
+    {
+      label: '3v3 Siege',
+      value: formatNumber(row.team_wins_total),
+      meta: battleStats ? `Winrate ${battleStats.percentage}% (${formatNumber(battleStats.wins)}/${formatNumber(battleStats.total)})` : null,
+    },
     { label: 'Trophäen', value: formatNumber(row.trophies_total) },
     {
       label: `Trophy-Gain (${growthWindowLabel})`,
@@ -809,11 +904,194 @@ function renderDetailMetrics(row) {
     .join('');
 }
 
+function renderDetailBattles(rows) {
+  const recentRows = rows.slice(0, 10);
+
+  if (recentRows.length === 0) {
+    detailBattles.innerHTML = '<div class="detail-battles-empty">Noch keine aufgezeichneten Runden.</div>';
+    setDetailBattlesState('', false);
+    return;
+  }
+
+  setDetailBattlesState('', false);
+  detailBattles.innerHTML = recentRows
+    .map((row) => {
+      const outcome = getBattleOutcomeMeta(row);
+
+      return `
+        <article class="detail-battle-card detail-battle-card-${escapeHtml(outcome.tone)}">
+          <div class="detail-battle-row">
+            <div class="detail-battle-avatar">
+              ${renderBattleBrawlerMedia(row)}
+            </div>
+            <div class="detail-battle-copy">
+              <span class="chip chip-${escapeHtml(outcome.tone)} detail-battle-outcome">${escapeHtml(outcome.label)}</span>
+              <div class="detail-battle-meta-row">
+                <span class="detail-battle-inline-media">
+                  ${renderBattleModeMedia(row)}
+                </span>
+                <strong class="detail-battle-mode">${escapeHtml(formatBattleModeLabel(row))}</strong>
+              </div>
+              <div class="detail-battle-meta-row">
+                <span class="detail-battle-inline-media">
+                  ${renderBattleMapMedia(row)}
+                </span>
+                <span class="detail-battle-map">${escapeHtml(formatBattleLabel(row.map))}</span>
+              </div>
+            </div>
+            <span class="detail-battle-time">${escapeHtml(formatRelativeTime(row.battle_time))}</span>
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+}
+
 function renderDetailReasons(row) {
   const reasons = buildReasonChips(row);
   document.getElementById('detail-reasons').innerHTML = reasons.length > 0
     ? reasons.map(renderChipMarkup).join('')
     : '';
+}
+
+function computeThreeVsThreeWinrate(rows) {
+  const ratedRows = rows.filter((row) => row.is_3v3 === true && typeof row.is_victory === 'boolean');
+
+  if (ratedRows.length === 0) {
+    return null;
+  }
+
+  const wins = ratedRows.filter((row) => row.is_victory === true).length;
+
+  return {
+    wins,
+    total: ratedRows.length,
+    percentage: Math.round((wins / ratedRows.length) * 100),
+  };
+}
+
+function getBattleOutcomeMeta(row) {
+  if (Number.isInteger(row.placement)) {
+    return {
+      label: `#${formatNumber(row.placement)}`,
+      tone: row.placement < 5 ? 'safe' : 'danger',
+    };
+  }
+
+  if (row.is_victory === true) {
+    return { label: 'Win', tone: 'safe' };
+  }
+
+  if (row.is_victory === false) {
+    return { label: 'Lose', tone: 'danger' };
+  }
+
+  if (typeof row.result === 'string' && row.result.length > 0) {
+    return {
+      label: capitalizeFirstLetter(row.result),
+      tone: 'neutral',
+    };
+  }
+
+  return { label: 'Unklar', tone: 'neutral' };
+}
+
+function formatBattleLabel(value) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return '-';
+  }
+
+  const spaced = value
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  return spaced.replace(/\b\p{L}/gu, (match) => match.toUpperCase());
+}
+
+function formatBattleModeLabel(row) {
+  const metadataModeName = readTrimmedString(row?.mode_name);
+  if (metadataModeName) {
+    return metadataModeName;
+  }
+
+  const normalizedMode = typeof row?.mode === 'string' ? row.mode.trim().toLowerCase() : '';
+  const normalizedMap = typeof row?.map === 'string' ? row.map.trim() : '';
+
+  if (normalizedMode && normalizedMode !== 'unknown') {
+    return formatBattleLabel(row.mode);
+  }
+
+  if (normalizedMap && BRAWL_HOCKEY_MAPS.has(normalizedMap)) {
+    return 'Brawl Hockey';
+  }
+
+  if (normalizedMap && BRAWL_ARENA_MAPS.has(normalizedMap)) {
+    return 'Brawl Arena';
+  }
+
+  return formatBattleLabel(row.mode);
+}
+
+function getBrawlerImageUrl(brawlerId) {
+  return Number.isInteger(brawlerId)
+    ? `https://cdn.brawlify.com/brawlers/borderless/${brawlerId}.png`
+    : null;
+}
+
+function renderBattleBrawlerMedia(row) {
+  const imageUrl = getBrawlerImageUrl(numberOrNull(row?.brawler_id));
+  const label = formatBattleLabel(row?.brawler_name);
+
+  if (!imageUrl) {
+    return `<div class="detail-battle-media-fallback">${escapeHtml(label.slice(0, 2))}</div>`;
+  }
+
+  return `<img class="detail-battle-avatar-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(label)}" loading="lazy" referrerpolicy="no-referrer">`;
+}
+
+function renderBattleModeMedia(row) {
+  const modeLabel = formatBattleModeLabel(row);
+  const imageUrl = getGameModeImageUrl(row);
+  const fallbackLabel = modeLabel.slice(0, 2);
+
+  return imageUrl
+    ? `<img class="detail-battle-inline-image detail-battle-mode-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(modeLabel)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.hidden=true;this.nextElementSibling.hidden=false;">`
+      + `<span class="detail-battle-inline-fallback" hidden>${escapeHtml(fallbackLabel)}</span>`
+    : `<span class="detail-battle-inline-fallback">${escapeHtml(fallbackLabel)}</span>`;
+}
+
+function renderBattleMapMedia(row) {
+  const mapLabel = formatBattleLabel(row?.map);
+  const imageUrl = getMapImageUrl(row);
+  const fallbackLabel = mapLabel.slice(0, 2);
+
+  return imageUrl
+    ? `<img class="detail-battle-inline-image detail-battle-map-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(mapLabel)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.hidden=true;this.nextElementSibling.hidden=false;">`
+      + `<span class="detail-battle-inline-fallback" hidden>${escapeHtml(fallbackLabel)}</span>`
+    : `<span class="detail-battle-inline-fallback">${escapeHtml(fallbackLabel)}</span>`;
+}
+
+function getGameModeImageUrl(row) {
+  return readTrimmedString(row?.mode_image_url);
+}
+
+function getMapImageUrl(row) {
+  const viewUrl = readTrimmedString(row?.map_image_url);
+
+  if (viewUrl) {
+    return viewUrl;
+  }
+
+  const eventId = numberOrNull(row?.event_id);
+  return Number.isInteger(eventId)
+    ? `https://cdn.brawlify.com/maps/regular/${eventId}.png`
+    : null;
+}
+
+function readTrimmedString(value) {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 }
 
 function renderDetailHistory(detailRow, historyRows) {
@@ -1833,6 +2111,19 @@ function setDetailHistoryState(message, visible) {
   const element = document.getElementById('detail-history-state');
   element.textContent = message;
   element.classList.toggle('is-visible', visible);
+}
+
+function setDetailBattlesState(message, visible) {
+  detailBattlesState.textContent = message;
+  detailBattlesState.classList.toggle('is-visible', visible);
+}
+
+function capitalizeFirstLetter(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    return '';
+  }
+
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 
