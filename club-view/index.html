@@ -10,16 +10,6 @@
   <link
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap"
     rel="stylesheet" />
-  <script>
-    (() => {
-      try {
-        const storedTheme = localStorage.getItem('club-view-theme');
-        document.documentElement.dataset.theme = ['club', 'arena', 'brawl'].includes(storedTheme) ? storedTheme : 'club';
-      } catch {
-        document.documentElement.dataset.theme = 'club';
-      }
-    })();
-  </script>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
@@ -27,34 +17,46 @@
   <main class="shell">
     <header class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Brawl Stars Club Dashboard</p>
-        <h1>CBA Veterans</h1>
+        <p class="eyebrow">Club View</p>
+        <div class="hero-title-row">
+          <h1>CBA Veterans</h1>
+          <span class="hero-pill">Read-only</span>
+        </div>
         <p class="subline">
-          Read-only &Uuml;bersicht f&uuml;r Aktivit&auml;t, Schutzstatus und Kick-Kandidaten.
+          Aktivit&auml;t, Schutzstatus, Ranked Elo und Kick-Kandidaten.
         </p>
       </div>
       <div class="hero-side">
         <div class="hero-actions">
-          <div class="theme-switch">
-            <span class="theme-switch-label">Mode</span>
-            <div class="theme-switcher" role="group" aria-label="Light, Dark oder Brawl Mode ausw&auml;hlen">
-              <button class="theme-option" type="button" data-theme-value="club" aria-pressed="false">Light</button>
-              <button class="theme-option" type="button" data-theme-value="arena" aria-pressed="true">Dark</button>
-              <button class="theme-option" type="button" data-theme-value="brawl" aria-pressed="false">Brawl</button>
-            </div>
-          </div>
           <p id="data-state" class="refresh-state">Stand: -</p>
+          <p class="snapshot-state">Snapshot <strong id="metric-snapshot">-</strong></p>
         </div>
         <button id="refresh-button" class="button hero-button" type="button">Aktualisieren</button>
       </div>
     </header>
 
     <section class="panel overview-panel">
-      <div class="overview-panel-header">
-        <div class="overview-last-stand">
-          <span class="overview-last-stand-label">Letzter Stand</span>
-          <strong id="metric-snapshot" class="overview-last-stand-value">-</strong>
-        </div>
+      <div class="overview-stats" aria-label="Club Kennzahlen">
+        <article class="overview-stat">
+          <span class="overview-stat-label">Mitglieder</span>
+          <strong id="metric-members" class="overview-stat-value">-</strong>
+        </article>
+        <article class="overview-stat overview-stat-danger">
+          <span class="overview-stat-label">Schlecht</span>
+          <strong id="metric-critical" class="overview-stat-value">-</strong>
+        </article>
+        <article class="overview-stat overview-stat-warn">
+          <span class="overview-stat-label">Grenzwertig</span>
+          <strong id="metric-warning" class="overview-stat-value">-</strong>
+        </article>
+        <article class="overview-stat overview-stat-safe">
+          <span class="overview-stat-label">Gut</span>
+          <strong id="metric-active" class="overview-stat-value">-</strong>
+        </article>
+        <article class="overview-stat overview-stat-brand">
+          <span class="overview-stat-label">Elo-Schnitt</span>
+          <strong id="metric-average-elo" class="overview-stat-value">-</strong>
+        </article>
       </div>
       <div class="overview-visuals">
         <div class="overview-main">
@@ -107,6 +109,17 @@
               <option value="protected">Gesch&uuml;tzt</option>
             </select>
           </div>
+          <div class="toolbar-block">
+            <label for="winrate-filter">Winrate</label>
+            <select id="winrate-filter">
+              <option value="all">Alle</option>
+              <option value="no_data">Kein Wert</option>
+              <option value="under_50">Unter 50%</option>
+              <option value="at_least_50">Ab 50%</option>
+              <option value="at_least_60">Ab 60%</option>
+              <option value="at_least_70">Ab 70%</option>
+            </select>
+          </div>
         </div>
         <div class="toolbar-row toolbar-row-sort">
           <div class="toolbar-block mobile-sort-block">
@@ -116,6 +129,8 @@
                 <option value="wins_display">3v3-Gain</option>
                 <option value="status">Status</option>
                 <option value="last_progress_date">Letzter 3v3 Sieg</option>
+                <option value="three_vs_three_winrate_percentage">Winrate</option>
+                <option value="ranked_elo">Ranked Elo</option>
                 <option value="team_wins_total">3v3 Siege</option>
                 <option value="trophies_total">Troph&auml;en</option>
                 <option value="trophies_display">Trophy-Gain</option>
@@ -152,6 +167,12 @@
                   </button>
                 </th>
                 <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="ranked_elo">
+                    <span class="sort-label">Ranked Elo</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
                   <button class="sort-button" type="button" data-sort-key="last_progress_date">
                     <span class="sort-label">Letzter 3v3 Sieg</span>
                     <span class="sort-icon" aria-hidden="true"></span>
@@ -166,6 +187,12 @@
                 <th aria-sort="none">
                   <button class="sort-button" type="button" data-sort-key="team_wins_total">
                     <span class="sort-label">3v3 Siege</span>
+                    <span class="sort-icon" aria-hidden="true"></span>
+                  </button>
+                </th>
+                <th aria-sort="none">
+                  <button class="sort-button" type="button" data-sort-key="three_vs_three_winrate_percentage">
+                    <span class="sort-label">Winrate</span>
                     <span class="sort-icon" aria-hidden="true"></span>
                   </button>
                 </th>

@@ -3,9 +3,9 @@ const dashboardBody = document.getElementById('dashboard-body');
 const tableState = document.getElementById('table-state');
 const refreshButton = document.getElementById('refresh-button');
 const dataState = document.getElementById('data-state');
-const themeButtons = [...document.querySelectorAll('.theme-option[data-theme-value]')];
 const statusFilter = document.getElementById('status-filter');
 const reasonFilter = document.getElementById('reason-filter');
+const winrateFilter = document.getElementById('winrate-filter');
 const searchInput = document.getElementById('search-input');
 const mobileSortKey = document.getElementById('mobile-sort-key');
 const mobileSortDirection = document.getElementById('mobile-sort-direction');
@@ -17,6 +17,13 @@ const overviewGainState = document.getElementById('overview-gain-state');
 const overviewGainChart = document.getElementById('overview-gain-chart');
 const overviewClubGainState = document.getElementById('overview-club-gain-state');
 const overviewClubGainChart = document.getElementById('overview-club-gain-chart');
+const overviewMetricElements = {
+  members: document.getElementById('metric-members'),
+  critical: document.getElementById('metric-critical'),
+  warning: document.getElementById('metric-warning'),
+  active: document.getElementById('metric-active'),
+  averageElo: document.getElementById('metric-average-elo'),
+};
 const detailBackdrop = document.getElementById('detail-backdrop');
 const detailPanel = document.getElementById('detail-panel');
 const detailCloseButton = document.getElementById('detail-close');
@@ -27,7 +34,31 @@ const detailRangeButtons = [...document.querySelectorAll('[data-history-days]')]
 const MAX_DETAIL_HISTORY_DAYS = 30;
 const MAX_OVERVIEW_CLUB_GAIN_DAYS = 30;
 const CHART_POINT_RADIUS = 4.5;
+const DETAIL_CHART_POINT_RADIUS = 3.5;
 const CHART_INLINE_LABEL_OFFSET = 6;
+const RANKED_ELO_THRESHOLDS = [
+  { value: 250, label: 'Bronze II' },
+  { value: 500, label: 'Bronze III' },
+  { value: 750, label: 'Silver I' },
+  { value: 1000, label: 'Silver II' },
+  { value: 1250, label: 'Silver III' },
+  { value: 1500, label: 'Gold I' },
+  { value: 2000, label: 'Gold II' },
+  { value: 2500, label: 'Gold III' },
+  { value: 3000, label: 'Diamond I' },
+  { value: 3500, label: 'Diamond II' },
+  { value: 4000, label: 'Diamond III' },
+  { value: 4500, label: 'Mythic I' },
+  { value: 5000, label: 'Mythic II' },
+  { value: 5500, label: 'Mythic III' },
+  { value: 6000, label: 'Legendary I' },
+  { value: 6750, label: 'Legendary II' },
+  { value: 7500, label: 'Legendary III' },
+  { value: 8250, label: 'Masters I' },
+  { value: 9250, label: 'Masters II' },
+  { value: 10250, label: 'Masters III' },
+  { value: 11250, label: 'Pro' },
+];
 const BRAWL_HOCKEY_MAPS = new Set([
   'Below Zero',
   'Bouncy Bowl',
@@ -90,14 +121,9 @@ refreshButton.addEventListener('click', () => {
   void loadDashboard();
 });
 
-themeButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    applyTheme(button.dataset.themeValue);
-  });
-});
-
 statusFilter.addEventListener('change', renderRows);
 reasonFilter?.addEventListener('change', renderRows);
+winrateFilter?.addEventListener('change', renderRows);
 searchInput.addEventListener('input', renderRows);
 mobileSortKey?.addEventListener('change', () => {
   sortState = {
@@ -165,7 +191,6 @@ window.addEventListener('keydown', (event) => {
 
 syncSortControls();
 syncDetailHistoryRangeButtons();
-syncThemeControls();
 
 if (!config) {
   refreshButton.disabled = true;
@@ -248,29 +273,6 @@ async function loadDashboard() {
   }
 }
 
-function applyTheme(themeName) {
-  const normalizedTheme = ['club', 'arena', 'brawl'].includes(themeName) ? themeName : 'club';
-  document.documentElement.dataset.theme = normalizedTheme;
-
-  try {
-    localStorage.setItem('club-view-theme', normalizedTheme);
-  } catch {}
-
-  syncThemeControls();
-}
-
-function syncThemeControls() {
-  const activeTheme = ['club', 'arena', 'brawl'].includes(document.documentElement.dataset.theme)
-    ? document.documentElement.dataset.theme
-    : 'club';
-
-  themeButtons.forEach((button) => {
-    const isActive = button.dataset.themeValue === activeTheme;
-    button.classList.toggle('is-active', isActive);
-    button.setAttribute('aria-pressed', String(isActive));
-  });
-}
-
 async function fetchDashboardRows(currentConfig) {
   const url = new URL(`${stripTrailingSlash(currentConfig.supabaseUrl)}/rest/v1/club_dashboard`);
   url.searchParams.set(
@@ -285,7 +287,18 @@ async function fetchDashboardRows(currentConfig) {
       'days_in_club',
       'trophies_total',
       'team_wins_total',
+      'ranked_rank',
+      'ranked_rank_label',
+      'ranked_rank_icon_url',
+      'ranked_elo',
+      'highest_all_time_ranked_rank',
+      'highest_all_time_ranked_rank_label',
+      'highest_all_time_ranked_rank_icon_url',
+      'highest_all_time_ranked_elo',
       'wins_display',
+      'three_vs_three_battles_total',
+      'three_vs_three_wins_total',
+      'three_vs_three_winrate_percentage',
       'trophies_display',
       'delta_window_label',
       'wins_7d',
@@ -338,7 +351,7 @@ async function fetchPlayerHistory(currentConfig, clubTag, playerId) {
   }
 
   const url = new URL(`${stripTrailingSlash(currentConfig.supabaseUrl)}/rest/v1/player_daily_snapshots`);
-  url.searchParams.set('select', 'snapshot_date,snapshot_at,trophies,team_wins');
+  url.searchParams.set('select', 'snapshot_date,snapshot_at,trophies,team_wins,ranked_elo');
   url.searchParams.set('club_tag', `eq.${normalizeClubTag(clubTag)}`);
   url.searchParams.set('player_id', `eq.${playerId}`);
   url.searchParams.set('order', 'snapshot_date.desc');
@@ -437,13 +450,78 @@ function renderOverviewMeta(rows) {
     .filter(Boolean)
     .sort()
     .at(-1);
+  const summary = getOverviewSummary(rows);
 
   document.getElementById('metric-snapshot').textContent = latestSnapshotAt
     ? formatDateTime(new Date(latestSnapshotAt))
     : '-';
+  setElementText(overviewMetricElements.members, formatNumber(summary.members));
+  setElementText(overviewMetricElements.critical, formatNumber(summary.critical));
+  setElementText(overviewMetricElements.warning, formatNumber(summary.warning));
+  setElementText(overviewMetricElements.active, formatNumber(summary.active));
+  setElementText(
+    overviewMetricElements.averageElo,
+    summary.averageElo === null
+      ? '-'
+      : `${formatNumber(summary.averageElo)} (${getRankedTierLabelFromElo(summary.averageElo)})`,
+  );
   dataState.textContent = latestSnapshotAt
     ? `Stand: ${formatRelativeTime(latestSnapshotAt)}`
     : 'Stand: kein Datenstand';
+}
+
+function getOverviewSummary(rows) {
+  const summary = {
+    members: Array.isArray(rows) ? rows.length : 0,
+    critical: 0,
+    warning: 0,
+    active: 0,
+    averageElo: null,
+  };
+  const rankedElos = [];
+
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const status = getDiagramStatusKey(row);
+
+    if (status === 'kritisch') {
+      summary.critical += 1;
+    } else if (status === 'fraglich') {
+      summary.warning += 1;
+    } else if (status === 'aktiv') {
+      summary.active += 1;
+    }
+
+    const rankedElo = numberOrNull(row.ranked_elo);
+    if (rankedElo !== null) {
+      rankedElos.push(rankedElo);
+    }
+  });
+
+  if (rankedElos.length > 0) {
+    summary.averageElo = Math.round(rankedElos.reduce((sum, value) => sum + value, 0) / rankedElos.length);
+  }
+
+  return summary;
+}
+
+function setElementText(element, text) {
+  if (element) {
+    element.textContent = text;
+  }
+}
+
+function getRankedTierLabelFromElo(elo) {
+  const numericElo = numberOrNull(elo);
+
+  if (numericElo === null) {
+    return 'Ranked';
+  }
+
+  const matchingThreshold = [...RANKED_ELO_THRESHOLDS]
+    .reverse()
+    .find((threshold) => numericElo >= threshold.value);
+
+  return matchingThreshold?.label ?? 'Bronze I';
 }
 
 function getDashboardThresholds(rows = allRows) {
@@ -546,7 +624,7 @@ function syncReasonFilterLabels(rows = allRows) {
 }
 
 function renderRows() {
-  const filteredRows = allRows.filter((row) => matchesStatus(row) && matchesReason(row) && matchesSearch(row));
+  const filteredRows = allRows.filter((row) => matchesStatus(row) && matchesReason(row) && matchesWinrate(row) && matchesSearch(row));
   const sortedRows = sortRows(filteredRows, sortState.key, sortState.direction);
   syncSortControls();
   renderOverviewStatusChart(allRows);
@@ -578,9 +656,11 @@ function renderRows() {
             <span class="player-tag">${escapeHtml(row.player_tag ?? '')}</span>
           </td>
           <td class="status-cell"><div class="chip-list">${statusChips.map(renderChipMarkup).join('')}</div></td>
+          <td class="ranked-cell">${renderRankedSummaryMarkup(row, 'current', { compact: true, hideLabel: true })}</td>
           <td class="numeric">${formatLastProgressLabel(row.last_progress_date, row.last_progress_at)}</td>
           <td class="numeric">${renderDeltaMarkup(row.wins_display)}</td>
           <td class="numeric">${formatNumber(row.team_wins_total)}</td>
+          <td class="numeric">${formatWinrateMarkup(row.three_vs_three_winrate_percentage, row.three_vs_three_battles_total)}</td>
           <td class="numeric">${formatNumber(row.trophies_total)}</td>
           <td class="numeric">${renderDeltaMarkup(row.trophies_display)}</td>
           <td class="numeric">${renderTrackingSinceMarkup(row.tracking_start_date, row.tracked_days)}</td>
@@ -621,6 +701,14 @@ function renderMobileCardMarkup(row) {
         <article class="mobile-stat">
           <span class="mobile-stat-label">3v3-Gain (${escapeHtml(growthWindowLabel)})</span>
           <strong class="mobile-stat-value">${renderDeltaMarkup(row.wins_display)}</strong>
+        </article>
+        <article class="mobile-stat">
+          <span class="mobile-stat-label">Winrate</span>
+          <strong class="mobile-stat-value">${formatWinrateMarkup(row.three_vs_three_winrate_percentage, row.three_vs_three_battles_total)}</strong>
+        </article>
+        <article class="mobile-stat">
+          <span class="mobile-stat-label">Ranked</span>
+          <strong class="mobile-stat-value">${renderRankedSummaryMarkup(row, 'current', { hideLabel: true })}</strong>
         </article>
       </div>
       <div class="chip-list mobile-card-reasons">${renderedReasons}</div>
@@ -797,7 +885,7 @@ async function openDetailPanel(row, options = {}) {
   const requestToken = ++detailRequestToken;
 
   renderDetailHeader(row);
-  renderDetailMetrics(row, null);
+  renderDetailMetrics(row);
   renderDetailReasons(row);
   detailBattles.innerHTML = '';
   setDetailBattlesState('Lade Runden ...', true);
@@ -826,7 +914,7 @@ async function openDetailPanel(row, options = {}) {
 
   if (battlesResult.status === 'fulfilled') {
     currentDetailBattleRows = battlesResult.value;
-    renderDetailMetrics(row, computeThreeVsThreeWinrate(battlesResult.value));
+    renderDetailMetrics(row);
     renderDetailBattles(battlesResult.value);
   } else {
     console.error(battlesResult.reason);
@@ -867,7 +955,7 @@ function renderDetailHeader(row) {
   document.getElementById('detail-status-row').innerHTML = chips.map(renderChipMarkup).join('');
 }
 
-function renderDetailMetrics(row, battleStats) {
+function renderDetailMetrics(row) {
   const growthWindowLabel = getGrowthWindowLabel(getGrowthWindowDaysForRow(row));
   const metrics = [
     { label: 'Letzter 3v3 Sieg', value: formatLastProgressLabel(row.last_progress_date, row.last_progress_at) },
@@ -878,7 +966,21 @@ function renderDetailMetrics(row, battleStats) {
     {
       label: '3v3 Siege',
       value: formatNumber(row.team_wins_total),
-      meta: battleStats ? `Winrate ${battleStats.percentage}% (${formatNumber(battleStats.wins)}/${formatNumber(battleStats.total)})` : null,
+    },
+    {
+      label: '3v3 Winrate',
+      value: formatWinrateMarkup(row.three_vs_three_winrate_percentage, row.three_vs_three_battles_total),
+      meta: numberOrNull(row.three_vs_three_battles_total) > 0
+        ? `${formatNumber(row.three_vs_three_wins_total)}/${formatNumber(row.three_vs_three_battles_total)}`
+        : null,
+    },
+    {
+      label: 'Ranked',
+      html: renderRankedSummaryMarkup(row, 'current', { hideLabel: true }),
+    },
+    {
+      label: 'All-Time-High',
+      html: renderRankedSummaryMarkup(row, 'highest', { hideLabel: true }),
     },
     { label: 'Trophäen', value: formatNumber(row.trophies_total) },
     {
@@ -896,7 +998,7 @@ function renderDetailMetrics(row, battleStats) {
       return `
         <article class="detail-metric-card">
           <span class="detail-metric-label">${escapeHtml(metric.label)}</span>
-          <strong class="detail-metric-value">${escapeHtml(metric.value)}</strong>
+          <strong class="detail-metric-value">${metric.html ?? escapeHtml(metric.value ?? '-')}</strong>
           ${metric.meta ? `<span class="detail-metric-meta">${escapeHtml(metric.meta)}</span>` : ''}
         </article>
       `;
@@ -925,7 +1027,6 @@ function renderDetailBattles(rows) {
               ${renderBattleBrawlerMedia(row)}
             </div>
             <div class="detail-battle-copy">
-              <span class="chip chip-${escapeHtml(outcome.tone)} detail-battle-outcome">${escapeHtml(outcome.label)}</span>
               <div class="detail-battle-meta-row">
                 <span class="detail-battle-inline-media">
                   ${renderBattleModeMedia(row)}
@@ -939,7 +1040,6 @@ function renderDetailBattles(rows) {
                 <span class="detail-battle-map">${escapeHtml(formatBattleLabel(row.map))}</span>
               </div>
             </div>
-            <span class="detail-battle-time">${escapeHtml(formatRelativeTime(row.battle_time))}</span>
           </div>
         </article>
       `;
@@ -952,22 +1052,6 @@ function renderDetailReasons(row) {
   document.getElementById('detail-reasons').innerHTML = reasons.length > 0
     ? reasons.map(renderChipMarkup).join('')
     : '';
-}
-
-function computeThreeVsThreeWinrate(rows) {
-  const ratedRows = rows.filter((row) => row.is_3v3 === true && typeof row.is_victory === 'boolean');
-
-  if (ratedRows.length === 0) {
-    return null;
-  }
-
-  const wins = ratedRows.filter((row) => row.is_victory === true).length;
-
-  return {
-    wins,
-    total: ratedRows.length,
-    percentage: Math.round((wins / ratedRows.length) * 100),
-  };
 }
 
 function getBattleOutcomeMeta(row) {
@@ -1694,6 +1778,7 @@ function renderDetailCharts(historyRows, previousRow = null) {
   );
   const winsSeries = buildHistorySeries(rowsAscending, 'team_wins', previousRow?.team_wins);
   const trophiesSeries = buildHistorySeries(rowsAscending, 'trophies', previousRow?.trophies);
+  const rankedEloSeries = buildHistorySeries(rowsAscending, 'ranked_elo', previousRow?.ranked_elo);
 
   container.innerHTML = [
     renderDetailChartCard({
@@ -1714,18 +1799,29 @@ function renderDetailCharts(historyRows, previousRow = null) {
       maxValue: Math.max(...trophiesSeries.map((point) => point.value)),
       xWindowDays: selectedDetailHistoryDays,
     }),
+    renderDetailChartCard({
+      title: 'Ranked Elo',
+      subtitle: 'Elo-Stand je Tag',
+      tone: 'safe',
+      series: rankedEloSeries,
+      tickFormatter: formatNumber,
+      minValue: null,
+      maxValue: Math.max(...rankedEloSeries.map((point) => point.value)),
+      thresholds: RANKED_ELO_THRESHOLDS,
+      xWindowDays: selectedDetailHistoryDays,
+    }),
   ].join('');
 }
 
-function renderDetailChartCard({ title, subtitle, tone, series, tickFormatter, maxValue, xWindowDays }) {
+function renderDetailChartCard({ title, subtitle, tone, series, tickFormatter, minValue, maxValue, thresholds = [], showDelta = true, xWindowDays }) {
   if (!Array.isArray(series) || series.length === 0) {
     return renderDetailChartPlaceholder(`Noch keine Daten für ${title}.`);
   }
 
-  const minValue = Math.min(...series.map((point) => point.value));
+  const seriesMinValue = Math.min(...series.map((point) => point.value));
   const chart = buildLineChartModel(series, {
     includeZero: false,
-    minValue,
+    minValue: minValue === undefined ? seriesMinValue : minValue,
     tickFormatter,
     maxValue,
     xWindowDays,
@@ -1742,11 +1838,12 @@ function renderDetailChartCard({ title, subtitle, tone, series, tickFormatter, m
       <div class="detail-chart-stage">
       <svg class="detail-chart-svg" viewBox="0 0 ${chart.width} ${chart.height}" role="img" aria-label="${escapeHtml(title)}">
         ${renderChartGrid(chart)}
+        ${renderChartThresholdLines(chart, thresholds)}
         <path class="detail-chart-line detail-chart-line-${escapeHtml(tone)}" d="${escapeHtml(chart.path)}"></path>
         ${chart.points
           .map((point, index) => {
             const seriesPoint = series[index];
-            const pointData = buildDetailChartPointData(seriesPoint);
+            const pointData = buildDetailChartPointData(seriesPoint, { showDelta });
             return renderInteractiveChartPointMarkup({
               x: point.x,
               y: point.y,
@@ -1760,7 +1857,7 @@ function renderDetailChartCard({ title, subtitle, tone, series, tickFormatter, m
                 shape: seriesPoint.isTrackingStart ? 'diamond' : 'circle',
                 x: point.x,
                 y: point.y,
-                radius: CHART_POINT_RADIUS,
+                radius: DETAIL_CHART_POINT_RADIUS,
                 className: `detail-chart-point ${seriesPoint.isTrackingStart ? 'detail-chart-point-start ' : ''}detail-chart-point-${escapeHtml(tone)}`,
               }),
             });
@@ -1782,7 +1879,32 @@ function renderDetailChartPlaceholder(message) {
   return `<div class="detail-chart-placeholder">${escapeHtml(message)}</div>`;
 }
 
-function buildDetailChartPointData(point) {
+function renderChartThresholdLines(chart, thresholds = []) {
+  if (!Array.isArray(thresholds) || thresholds.length === 0) {
+    return '';
+  }
+
+  return thresholds
+    .filter((threshold) => {
+      const value = numberOrNull(threshold?.value);
+      return value !== null && value >= chart.domain.min && value <= chart.domain.max;
+    })
+    .map((threshold) => {
+      const value = numberOrNull(threshold.value);
+      const y = Number(scaleChartY(value, chart.domain, chart.plotStartY, chart.plotHeight).toFixed(2));
+      const labelY = Math.max(chart.plotStartY + 9, y - 4);
+
+      return `
+        <g class="detail-chart-threshold">
+          <line class="detail-chart-threshold-line" x1="${chart.plotStartX}" y1="${y}" x2="${chart.plotEndX}" y2="${y}"></line>
+          <text class="detail-chart-threshold-label" x="${chart.plotEndX - 4}" y="${labelY}" text-anchor="end">${escapeHtml(threshold.label)}</text>
+        </g>
+      `;
+    })
+    .join('');
+}
+
+function buildDetailChartPointData(point, options = {}) {
   if (!point) {
     return {
       title: '',
@@ -1794,15 +1916,17 @@ function buildDetailChartPointData(point) {
 
   const title = point.label ?? formatChartDateLabel(point.date);
   const value = `Stand: ${formatNumber(point.value)}`;
-  const delta = point.delta === null
-    ? 'Tracking-Start'
-    : formatDelta(point.delta);
+  const delta = options.showDelta === false
+    ? ''
+    : point.delta === null
+      ? 'Tracking-Start'
+      : formatDelta(point.delta);
 
   return {
     title,
     delta,
     value,
-    ariaLabel: `${title}: ${delta}. ${value}`,
+    ariaLabel: delta ? `${title}: ${delta}. ${value}` : `${title}: ${value}`,
   };
 }
 
@@ -1962,6 +2086,7 @@ function buildLineChartModel(series, options = {}) {
     height,
     plotStartX: padding.left,
     plotEndX: padding.left + plotWidth,
+    plotStartY: padding.top,
     plotHeight,
     domain,
     ticks: buildChartTicks(domain, options.tickFormatter ?? formatNumber),
@@ -2080,7 +2205,8 @@ function addDaysUtc(date, days) {
 function renderChartGrid(chart) {
   return chart.ticks
     .map((tick) => {
-      const y = Number(scaleChartY(tick.value, chart.domain, 14, chart.plotHeight).toFixed(2));
+      const plotStartY = chart.plotStartY ?? 14;
+      const y = Number(scaleChartY(tick.value, chart.domain, plotStartY, chart.plotHeight).toFixed(2));
 
       return `
         <g class="detail-chart-grid-group">
@@ -2172,6 +2298,37 @@ function matchesReason(row) {
   }
 
   return getReasonTokens(row).includes(selectedReason);
+}
+
+function matchesWinrate(row) {
+  const selectedWinrate = winrateFilter?.value ?? 'all';
+  const winrate = numberOrNull(row.three_vs_three_winrate_percentage);
+  const totalBattles = numberOrNull(row.three_vs_three_battles_total) ?? 0;
+
+  if (selectedWinrate === 'all') {
+    return true;
+  }
+
+  if (selectedWinrate === 'no_data') {
+    return totalBattles === 0 || winrate === null;
+  }
+
+  if (winrate === null) {
+    return false;
+  }
+
+  switch (selectedWinrate) {
+    case 'under_50':
+      return winrate < 50;
+    case 'at_least_50':
+      return winrate >= 50;
+    case 'at_least_60':
+      return winrate >= 60;
+    case 'at_least_70':
+      return winrate >= 70;
+    default:
+      return true;
+  }
 }
 
 function syncSortControls() {
@@ -2271,6 +2428,10 @@ function getSortValue(row, key) {
       return numberOrNull(row.wins_display);
     case 'team_wins_total':
       return numberOrNull(row.team_wins_total);
+    case 'three_vs_three_winrate_percentage':
+      return numberOrNull(row.three_vs_three_winrate_percentage);
+    case 'ranked_elo':
+      return numberOrNull(row.ranked_elo);
     case 'trophies_total':
       return numberOrNull(row.trophies_total);
     case 'trophies_display':
@@ -2392,7 +2553,134 @@ function renderDeltaMarkup(value) {
     <span class="delta-stack">
       <span class="delta-value ${deltaClass}">${escapeHtml(formatted)}</span>
     </span>
+    `;
+}
+
+function formatWinrateMarkup(percentageValue, totalBattlesValue) {
+  const percentage = numberOrNull(percentageValue);
+  const totalBattles = numberOrNull(totalBattlesValue) ?? 0;
+
+  if (totalBattles < 1 || percentage === null) {
+    return '-';
+  }
+
+  return `${formatNumber(percentage)}%`;
+}
+
+function renderRankedSummaryMarkup(row, variant = 'current', options = {}) {
+  const ranked = getRankedDisplayData(row, variant);
+
+  if (!ranked.hasData) {
+    return '-';
+  }
+
+  const compactClass = options.compact ? ' ranked-summary-compact' : '';
+  const iconMarkup = ranked.iconUrl
+    ? `<img class="ranked-icon" src="${escapeHtml(ranked.iconUrl)}" alt="${escapeHtml(ranked.label)}" loading="lazy" />`
+    : '<span class="ranked-icon ranked-icon-fallback" aria-hidden="true">R</span>';
+
+  return `
+    <span class="ranked-summary${compactClass}">
+      ${iconMarkup}
+      <span class="ranked-copy">
+        ${options.hideLabel ? '' : `<span class="ranked-label">${escapeHtml(ranked.label)}</span>`}
+        <span class="ranked-elo">${escapeHtml(ranked.eloLabel)}</span>
+      </span>
+    </span>
   `;
+}
+
+function getRankedDisplayData(row, variant) {
+  const isHighest = variant === 'highest';
+  const rank = numberOrNull(isHighest ? row.highest_all_time_ranked_rank : row.ranked_rank);
+  const label = isHighest ? row.highest_all_time_ranked_rank_label : row.ranked_rank_label;
+  const storedIconUrl = isHighest ? row.highest_all_time_ranked_rank_icon_url : row.ranked_rank_icon_url;
+  const elo = numberOrNull(isHighest ? row.highest_all_time_ranked_elo : row.ranked_elo);
+
+  return {
+    hasData: rank !== null || elo !== null || Boolean(label),
+    iconUrl: buildBrawlifyRankedIconUrlFromElo(elo)
+      ?? buildBrawlifyRankedIconUrlFromRank(rank)
+      ?? readRankedIconUrl(storedIconUrl),
+    label: formatRankedRankLabel(label, rank),
+    eloLabel: elo === null ? '-' : formatNumber(elo),
+  };
+}
+
+function readRankedIconUrl(value) {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function buildBrawlifyRankedIconUrlFromElo(elo) {
+  const tierIndex = getRankedTierIndexFromElo(elo);
+  return buildBrawlifyRankedIconUrlFromTierIndex(tierIndex);
+}
+
+function getRankedTierIndexFromElo(elo) {
+  if (elo === null) {
+    return null;
+  }
+
+  if (elo >= 11250) return 21;
+  if (elo >= 10250) return 20;
+  if (elo >= 9250) return 19;
+  if (elo >= 8250) return 18;
+  if (elo >= 7500) return 17;
+  if (elo >= 6750) return 16;
+  if (elo >= 6000) return 15;
+  if (elo >= 5500) return 14;
+  if (elo >= 5000) return 13;
+  if (elo >= 4500) return 12;
+  if (elo >= 4000) return 11;
+  if (elo >= 3500) return 10;
+  if (elo >= 3000) return 9;
+  if (elo >= 2500) return 8;
+  if (elo >= 2000) return 7;
+  if (elo >= 1500) return 6;
+  if (elo >= 1250) return 5;
+  if (elo >= 1000) return 4;
+  if (elo >= 750) return 3;
+  if (elo >= 500) return 2;
+  if (elo >= 250) return 1;
+  return 0;
+}
+
+function buildBrawlifyRankedIconUrlFromRank(rank) {
+  if (rank === null) {
+    return null;
+  }
+
+  if (rank >= 58000000 && rank <= 58000021) {
+    return `https://cdn.brawlify.com/ranked/tiered/${rank}.png`;
+  }
+
+  const tierIndex = rank >= 1 && rank <= 22
+    ? rank - 1
+    : rank >= 0 && rank <= 21
+      ? rank
+      : null;
+
+  return buildBrawlifyRankedIconUrlFromTierIndex(tierIndex);
+}
+
+function buildBrawlifyRankedIconUrlFromTierIndex(tierIndex) {
+  if (tierIndex === null) {
+    return null;
+  }
+
+  return `https://cdn.brawlify.com/ranked/tiered/${58000000 + tierIndex}.png`;
+}
+
+function formatRankedRankLabel(label, rank) {
+  if (typeof label === 'string' && label.trim().length > 0) {
+    return label.trim();
+  }
+
+  if (rank !== null) {
+    return `Rank ${formatNumber(rank)}`;
+  }
+
+  return 'Ranked';
 }
 
 function renderTrackingSinceMarkup(dateValue, trackedDays) {
