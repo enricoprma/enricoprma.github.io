@@ -270,6 +270,21 @@ h1 {
   line-height: 1;
 }
 
+.overview-stat-value-inline {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  white-space: nowrap;
+}
+
+.overview-stat-rank {
+  display: inline;
+  color: var(--text-muted);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.56em;
+  font-weight: 700;
+}
+
 .overview-stat-danger .overview-stat-value {
   color: var(--danger);
 }
@@ -282,11 +297,16 @@ h1 {
   color: var(--safe);
 }
 
+.overview-stat-live .overview-stat-value {
+  color: var(--safe);
+}
+
 .overview-stat-brand .overview-stat-value {
   color: var(--brand);
 }
 
-.overview-stat-brand {
+.overview-stat-brand,
+.overview-stat-live {
   grid-column: 1 / -1;
 }
 
@@ -813,6 +833,17 @@ th[aria-sort='descending'] .sort-icon::after {
 
 .delta-value.is-neutral {
   color: var(--text);
+}
+
+.delta-meta {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.delta-meta.is-positive {
+  color: var(--safe);
 }
 
 .table-meta {
@@ -1457,10 +1488,11 @@ th[aria-sort='descending'] .sort-icon::after {
   }
 
   .overview-stats {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(180px, 1.25fr);
   }
 
-  .overview-stat-brand {
+  .overview-stat-brand,
+  .overview-stat-live {
     grid-column: auto;
   }
 

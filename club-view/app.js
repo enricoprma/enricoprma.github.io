@@ -22,6 +22,7 @@ const overviewMetricElements = {
   critical: document.getElementById('metric-critical'),
   warning: document.getElementById('metric-warning'),
   active: document.getElementById('metric-active'),
+  todayWins: document.getElementById('metric-today-wins'),
   averageElo: document.getElementById('metric-average-elo'),
 };
 const detailBackdrop = document.getElementById('detail-backdrop');
@@ -296,10 +297,12 @@ async function fetchDashboardRows(currentConfig) {
       'highest_all_time_ranked_rank_icon_url',
       'highest_all_time_ranked_elo',
       'wins_display',
+      'wins_today',
       'three_vs_three_battles_total',
       'three_vs_three_wins_total',
       'three_vs_three_winrate_percentage',
       'trophies_display',
+      'trophies_today',
       'delta_window_label',
       'wins_7d',
       'trophies_7d',
@@ -421,27 +424,43 @@ async function fetchPlayerBattles(currentConfig, clubTag, playerId) {
 }
 
 async function fetchClubHistory(currentConfig, clubTag, lookbackDays) {
-  const url = new URL(`${stripTrailingSlash(currentConfig.supabaseUrl)}/rest/v1/player_daily_snapshots`);
   const startDate = formatIsoDate(addDaysUtc(parseChartAxisDate(new Date()), -(lookbackDays + 1)));
-  url.searchParams.set('select', 'player_id,snapshot_date,team_wins');
-  url.searchParams.set('club_tag', `eq.${normalizeClubTag(clubTag)}`);
-  url.searchParams.set('snapshot_date', `gte.${startDate}`);
-  url.searchParams.set('order', 'snapshot_date.asc');
-  url.searchParams.set('limit', '10000');
+  const rows = [];
+  const pageSize = 1000;
+  let offset = 0;
 
-  const response = await fetch(url, {
-    headers: {
-      apikey: currentConfig.supabaseAnonKey,
-      Authorization: `Bearer ${currentConfig.supabaseAnonKey}`,
-      Accept: 'application/json',
-    },
-  });
+  while (true) {
+    const url = new URL(`${stripTrailingSlash(currentConfig.supabaseUrl)}/rest/v1/player_daily_snapshots`);
+    url.searchParams.set('select', 'player_id,snapshot_date,team_wins');
+    url.searchParams.set('club_tag', `eq.${normalizeClubTag(clubTag)}`);
+    url.searchParams.set('snapshot_date', `gte.${startDate}`);
+    url.searchParams.set('order', 'snapshot_date.asc,player_id.asc');
+    url.searchParams.set('limit', String(pageSize));
+    url.searchParams.set('offset', String(offset));
 
-  if (!response.ok) {
-    throw new Error(`Supabase Club-Verlauf antwortet mit ${response.status}`);
+    const response = await fetch(url, {
+      headers: {
+        apikey: currentConfig.supabaseAnonKey,
+        Authorization: `Bearer ${currentConfig.supabaseAnonKey}`,
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase Club-Verlauf antwortet mit ${response.status}`);
+    }
+
+    const pageRows = await response.json();
+    rows.push(...pageRows);
+
+    if (pageRows.length < pageSize) {
+      break;
+    }
+
+    offset += pageSize;
   }
 
-  return await response.json();
+  return rows;
 }
 
 function renderOverviewMeta(rows) {
@@ -459,11 +478,12 @@ function renderOverviewMeta(rows) {
   setElementText(overviewMetricElements.critical, formatNumber(summary.critical));
   setElementText(overviewMetricElements.warning, formatNumber(summary.warning));
   setElementText(overviewMetricElements.active, formatNumber(summary.active));
-  setElementText(
+  setElementText(overviewMetricElements.todayWins, formatTodayGainValue(summary.todayWins));
+  setElementHtml(
     overviewMetricElements.averageElo,
     summary.averageElo === null
       ? '-'
-      : `${formatNumber(summary.averageElo)} (${getRankedTierLabelFromElo(summary.averageElo)})`,
+      : `${escapeHtml(formatNumber(summary.averageElo))} <span class="overview-stat-rank">(${escapeHtml(getRankedTierLabelFromElo(summary.averageElo))})</span>`,
   );
   dataState.textContent = latestSnapshotAt
     ? `Stand: ${formatRelativeTime(latestSnapshotAt)}`
@@ -476,6 +496,7 @@ function getOverviewSummary(rows) {
     critical: 0,
     warning: 0,
     active: 0,
+    todayWins: 0,
     averageElo: null,
   };
   const rankedElos = [];
@@ -495,6 +516,11 @@ function getOverviewSummary(rows) {
     if (rankedElo !== null) {
       rankedElos.push(rankedElo);
     }
+
+    const winsToday = numberOrNull(row.wins_today);
+    if (winsToday !== null) {
+      summary.todayWins += winsToday;
+    }
   });
 
   if (rankedElos.length > 0) {
@@ -507,6 +533,12 @@ function getOverviewSummary(rows) {
 function setElementText(element, text) {
   if (element) {
     element.textContent = text;
+  }
+}
+
+function setElementHtml(element, html) {
+  if (element) {
+    element.innerHTML = html;
   }
 }
 
@@ -658,7 +690,7 @@ function renderRows() {
           <td class="status-cell"><div class="chip-list">${statusChips.map(renderChipMarkup).join('')}</div></td>
           <td class="ranked-cell">${renderRankedSummaryMarkup(row, 'current', { compact: true, hideLabel: true })}</td>
           <td class="numeric">${formatLastProgressLabel(row.last_progress_date, row.last_progress_at)}</td>
-          <td class="numeric">${renderDeltaMarkup(row.wins_display)}</td>
+          <td class="numeric">${renderDeltaWithTodayMarkup(row.wins_display, row.wins_today)}</td>
           <td class="numeric">${formatNumber(row.team_wins_total)}</td>
           <td class="numeric">${formatWinrateMarkup(row.three_vs_three_winrate_percentage, row.three_vs_three_battles_total)}</td>
           <td class="numeric">${formatNumber(row.trophies_total)}</td>
@@ -700,7 +732,7 @@ function renderMobileCardMarkup(row) {
         </article>
         <article class="mobile-stat">
           <span class="mobile-stat-label">3v3-Gain (${escapeHtml(growthWindowLabel)})</span>
-          <strong class="mobile-stat-value">${renderDeltaMarkup(row.wins_display)}</strong>
+          <strong class="mobile-stat-value">${renderDeltaWithTodayMarkup(row.wins_display, row.wins_today)}</strong>
         </article>
         <article class="mobile-stat">
           <span class="mobile-stat-label">Winrate</span>
@@ -962,6 +994,7 @@ function renderDetailMetrics(row) {
     {
       label: `3v3-Gain (${growthWindowLabel})`,
       value: formatDelta(row.wins_display),
+      meta: formatTodayGainLabel(row.wins_today),
     },
     {
       label: '3v3 Siege',
@@ -1462,7 +1495,11 @@ function renderOverviewClubGainChart(rows, historyRows) {
     selectedOverviewClubGainDays = windowOptions[0];
   }
 
-  const series = buildOverviewClubGainSeries(historyRows, selectedOverviewClubGainDays);
+  const series = buildOverviewClubGainSeries(
+    historyRows,
+    selectedOverviewClubGainDays,
+    getLatestCompletedDashboardSnapshotDate(rows),
+  );
 
   if (series.length === 0) {
     overviewClubGainChart.innerHTML = '';
@@ -1508,7 +1545,7 @@ function renderOverviewClubGainChart(rows, historyRows) {
       <div class="detail-chart-header">
         <div>
           <h3 class="detail-chart-title">Club-3v3-Gain pro Tag</h3>
-          <p class="detail-chart-subtitle">Die Summe der 3v3-Gains aller Mitglieder pro Tag.</p>
+          <p class="detail-chart-subtitle">Die Summe der 3v3-Gains aller Mitglieder pro abgeschlossenen Tag.</p>
         </div>
         <div class="detail-history-range overview-club-gain-range">
           ${rangeButtonsMarkup}
@@ -1570,7 +1607,21 @@ function renderOverviewClubGainChart(rows, historyRows) {
   setOverviewClubGainState('', false);
 }
 
-function buildOverviewClubGainSeries(historyRows, windowDays) {
+function getLatestCompletedDashboardSnapshotDate(rows) {
+  const dateValues = (Array.isArray(rows) ? rows : [])
+    .map((row) => row?.current_snapshot_date ? parseChartAxisDate(row.current_snapshot_date).getTime() : null)
+    .filter((value) => Number.isFinite(value));
+
+  if (dateValues.length === 0) {
+    return null;
+  }
+
+  const latestSnapshotDateMs = Math.max(...dateValues);
+  const latestCompletedDateMs = addDaysUtc(parseChartAxisDate(new Date()), -1).getTime();
+  return new Date(Math.min(latestSnapshotDateMs, latestCompletedDateMs));
+}
+
+function buildOverviewClubGainSeries(historyRows, windowDays, endDate = null) {
   if (!Array.isArray(historyRows) || historyRows.length === 0) {
     return [];
   }
@@ -1611,7 +1662,9 @@ function buildOverviewClubGainSeries(historyRows, windowDays) {
     return [];
   }
 
-  const latestDate = new Date(Math.max(...normalizedRows.map((row) => row.dateMs)));
+  const latestHistoryDateMs = Math.max(...normalizedRows.map((row) => row.dateMs));
+  const endDateMs = endDate ? parseChartAxisDate(endDate).getTime() : null;
+  const latestDate = new Date(Number.isFinite(endDateMs) ? endDateMs : latestHistoryDateMs);
   const startDate = addDaysUtc(latestDate, -(Math.max(1, windowDays) - 1));
   const visibleDates = [];
 
@@ -1826,6 +1879,14 @@ function renderDetailChartCard({ title, subtitle, tone, series, tickFormatter, m
     maxValue,
     xWindowDays,
   });
+  const detailPoints = chart.points.map((point, index) => ({
+    point,
+    seriesPoint: series[index],
+  }));
+  const orderedDetailPoints = [
+    ...detailPoints.filter(({ seriesPoint }) => seriesPoint.isTrackingStart),
+    ...detailPoints.filter(({ seriesPoint }) => !seriesPoint.isTrackingStart),
+  ];
 
   return `
     <article class="detail-chart-card">
@@ -1840,9 +1901,8 @@ function renderDetailChartCard({ title, subtitle, tone, series, tickFormatter, m
         ${renderChartGrid(chart)}
         ${renderChartThresholdLines(chart, thresholds)}
         <path class="detail-chart-line detail-chart-line-${escapeHtml(tone)}" d="${escapeHtml(chart.path)}"></path>
-        ${chart.points
-          .map((point, index) => {
-            const seriesPoint = series[index];
+        ${orderedDetailPoints
+          .map(({ point, seriesPoint }) => {
             const pointData = buildDetailChartPointData(seriesPoint, { showDelta });
             return renderInteractiveChartPointMarkup({
               x: point.x,
@@ -1944,8 +2004,16 @@ function prepareDetailHistoryRows(detailRow, historyRows) {
     return rows;
   }
 
-  const startTrophies = deriveStartValue(detailRow.trophies_total, detailRow.trophies_since_tracking_start);
-  const startWins = deriveStartValue(detailRow.team_wins_total, detailRow.wins_since_tracking_start);
+  const startTrophies = deriveCompletedStartValue(
+    detailRow.trophies_total,
+    detailRow.trophies_today,
+    detailRow.trophies_since_tracking_start,
+  );
+  const startWins = deriveCompletedStartValue(
+    detailRow.team_wins_total,
+    detailRow.wins_today,
+    detailRow.wins_since_tracking_start,
+  );
 
   if (startTrophies === null && startWins === null) {
     return rows;
@@ -1991,6 +2059,17 @@ function deriveStartValue(currentValue, deltaValue) {
   }
 
   return current - delta;
+}
+
+function deriveCompletedStartValue(currentValue, todayValue, deltaValue) {
+  const current = numberOrNull(currentValue);
+  const today = numberOrNull(todayValue) ?? 0;
+
+  if (current === null) {
+    return null;
+  }
+
+  return deriveStartValue(current - today, deltaValue);
 }
 
 function buildHistorySeries(rowsAscending, key, previousBaselineValue = null) {
@@ -2540,6 +2619,40 @@ function formatDelta(value) {
 }
 
 function renderDeltaMarkup(value) {
+  const valueMarkup = renderDeltaValueMarkup(value);
+
+  if (valueMarkup === '-') {
+    return '-';
+  }
+
+  return `
+    <span class="delta-stack">
+      ${valueMarkup}
+    </span>
+    `;
+}
+
+function renderDeltaWithTodayMarkup(value, todayValue) {
+  const valueMarkup = renderDeltaValueMarkup(value);
+
+  if (valueMarkup === '-') {
+    return '-';
+  }
+
+  const todayLabel = formatTodayGainLabel(todayValue);
+  const todayMarkup = todayLabel === null
+    ? ''
+    : `<span class="delta-meta ${numberOrNull(todayValue) > 0 ? 'is-positive' : 'is-neutral'}">${escapeHtml(todayLabel)}</span>`;
+
+  return `
+    <span class="delta-stack">
+      ${valueMarkup}
+      ${todayMarkup}
+    </span>
+    `;
+}
+
+function renderDeltaValueMarkup(value) {
   const formatted = formatDelta(value);
 
   if (formatted === '-') {
@@ -2549,11 +2662,22 @@ function renderDeltaMarkup(value) {
   const numeric = Number(value);
   const deltaClass = numeric > 0 ? 'is-positive' : numeric < 0 ? 'is-negative' : 'is-neutral';
 
-  return `
-    <span class="delta-stack">
-      <span class="delta-value ${deltaClass}">${escapeHtml(formatted)}</span>
-    </span>
-    `;
+  return `<span class="delta-value ${deltaClass}">${escapeHtml(formatted)}</span>`;
+}
+
+function formatTodayGainLabel(value) {
+  const numeric = numberOrNull(value);
+
+  if (numeric === null || numeric <= 0) {
+    return null;
+  }
+
+  return `Heute ${formatDelta(numeric)}`;
+}
+
+function formatTodayGainValue(value) {
+  const numeric = numberOrNull(value);
+  return numeric === null ? '-' : formatDelta(numeric);
 }
 
 function formatWinrateMarkup(percentageValue, totalBattlesValue) {
