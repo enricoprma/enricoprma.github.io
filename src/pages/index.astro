@@ -1,11 +1,130 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import {projects} from '../data/projects' 
+import {workExperiences} from '../data/workExperiences'
 ---
 
 <Layout>
-	<Welcome />
+	<main>
+		<aside id="about">
+			<article>
+				<small>ABOUT ME</small>
+				<h1>Enrico Perea</h1>
+				<h3>
+					I like to work on ideas that make things genuinely easier, simpler or more useful
+				</h3>
+				<h4 style="color: var(--coral);">Human-Technology Interaction student focused on frontend development, software engineering and UX.</h4>
+			</article>
+		</aside>
+
+		<hr/>
+
+		<aside id="references">
+			<article id="experiences">
+				<small>EXPERIENCE</small>
+				{workExperiences && workExperiences.map((experience, i) => (
+					<div class="experience">
+						<h6>{experience.startDate} - {experience.endDate}</h6>
+						<h3>{experience.company}</h3>
+						<h4>{experience.role}</h4>
+						<ul>
+							{experience.description.map(d => (
+								<li>{d}</li>
+							))}
+						</ul>
+						<div class="tags">
+							{experience.technologies.map(t => (
+								<h6 class="tag">{t}</h6>
+							))}
+						</div>
+					</div>
+				))}
+			</article>
+			<article id="projects">
+				<small>SELECTED PROJECTS</small>
+				{projects && projects.map(project => (
+					<div class="project">
+						<h3>{project.title}</h3>
+						<p>{project.description}</p>
+						<div class="tags">
+							{project.tags.map(tag => (
+								<h6 class="tag">{tag}</h6>
+							))}
+						</div>
+						<div class="links">
+							{project.links && project.links.map(link => (
+								<small><a class="link" href={link.href} target="_blank">{link.label}</a></small>
+							))}
+						</div>
+					</div>
+				))}
+			</article>	
+		</aside>
+	</main>
 </Layout>
+<style>
+
+	main {
+		padding: var(--space-2);
+		border: 1px dashed;
+	}
+
+	#about {
+		padding: var(--space-2);
+	}
+
+	#references {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.project, .experience{
+		padding: var(--space-1);
+	}
+
+	#experiences {
+		width: 66.6%;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+	.experience {
+		padding: var(--space-3);
+		border: 2px dashed var(--yellow)
+	}
+
+	#projects {
+		width: 33.3%;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+	.project {
+		padding: var(--space-3);
+		border: 2px dashed var(--lilac)
+	}
+	.tags, .links {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	.tags {
+		column-gap: var(--space-2);
+	}
+	.links{
+		column-gap: var(--space-2);
+	}
+
+	@media (max-width: 820px) {
+		#references {
+			flex-direction: column;
+		}
+		#projects, #experiences	{
+			width: 100%;
+		}
+		#experiences {
+			border: none;
+			padding: 0;
+		}
+
+	}
+</style>
