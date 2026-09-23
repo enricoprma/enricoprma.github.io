@@ -1,6 +1,8 @@
+import type { Translation } from "../translation";
+
 export type Project = {
   title: string;
-  description: string;
+  description: Translation;
   tags: string[];
   links?: {
     label: string;
@@ -8,11 +10,13 @@ export type Project = {
   }[];
 };
 
-export const projects: Project[] = [
+export const PROJECTS: Project[] = [
   {
     title: "Wahl-Navi",
-    description:
-      "Data-driven Angular election-orientation app with weighted party matching, local progress saving, and an Excel-to-YAML pipeline. Includes a fictional demo dataset.",
+    description: {
+      de: "Datengesteuerte Angular-App zur Wahlorientierung mit gewichteter Parteizuweisung, lokaler Speicherung des Fortschritts und einer Excel-zu-YAML-Pipeline. Enthält einen fiktiven Demo-Datensatz.",
+      en: "Data-driven Angular election-orientation app with weighted party matching, local progress saving, and an Excel-to-YAML pipeline. Includes a fictional demo dataset.",
+    },
     tags: ["Angular", "Python", "Elections", "Neutrality"],
     links: [
       {
@@ -27,7 +31,10 @@ export const projects: Project[] = [
   },
   {
     title: "Local-Remote",
-    description: "A browser-based wireless touchpad and keyboard for Windows.",
+    description: {
+      de: "Ein browserbasiertes drahtloses Touchpad und Tastatur für Windows.",
+      en: "A browser-based wireless touchpad and keyboard for Windows.",
+    },
     tags: ["NodeJS", "Express", "Electron", "Remote-Control"],
     links: [
       {
