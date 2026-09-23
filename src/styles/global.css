@@ -7,6 +7,7 @@
   --ink: #283f62;
   --blue: #789bc5;
   --coral: #e9958c;
+  --coral-deep: #ba5f5f;
   --mint: #a8cbb8;
   --lilac: #c3b1d8;
   --yellow: #e7ca83;
@@ -138,7 +139,8 @@ h6 {
   letter-spacing: 0.12em;
 }
 
-p {
+p,
+li {
   margin: 0 0 var(--space-2);
   max-width: 65ch;
 }
@@ -157,9 +159,18 @@ a {
   text-underline-offset: 0.2em;
 }
 
+a:hover {
+  text-decoration-thickness: 3px;
+  color: var(--coral-deep);
+}
+
 a:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 4px;
+}
+
+a.no-underline {
+  text-decoration: none;
 }
 
 ul {
@@ -168,18 +179,50 @@ ul {
   padding-left: 0;
 }
 
-.tag {
+table {
+  border-collapse: collapse;
+}
+
+tr {
+  border-bottom: 1px dashed var(--ink);
+  border-top: 1px dashed var(--ink);
+}
+
+td {
   padding: var(--space-1);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.55rem;
   background-color: var(--paper);
   border: 1px solid;
-  margin-bottom: var(--space-2);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--coral-deep);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 hr {
-  border: 1px dashed var(--ink);
-  margin: var(--space-2) 0;
+  border: none;
+  border-top: 2px dashed var(--ink);
+  margin: var(--space-5) 0;
 }
 
-hr.solid {
-  border-top: 1px solid var(--ink);
+hr.soft {
+  border-top: 1.5px dashed var(--ink);
+  margin: var(--space-3) 0;
 }
