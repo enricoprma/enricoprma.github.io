@@ -1,10 +1,11 @@
 export type Locale = "de" | "en";
 
-export type Translation = {
-  de: string;
-  en: string;
+export type LocalizedText = Record<Locale, string>;
+
+export type LocalizedTextTree = {
+  [key: string]: LocalizedText | LocalizedTextTree;
 };
 
-export function createTranslator(lang: Locale) {
-  return (value: Translation) => value[lang];
+export function createLocalizer(locale: Locale) {
+  return (text: LocalizedText) => text[locale];
 }

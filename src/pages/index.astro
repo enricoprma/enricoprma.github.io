@@ -2,8 +2,41 @@
 import Layout from "../layouts/Layout.astro";
 ---
 
-<script>
-    const lang = navigator.language.startsWith("de") ? "de" : "en";
-    window.location.replace(`/${lang}/`);
+<script is:inline>
+    const locale = navigator.language.toLocaleLowerCase().startsWith("de") ? "de" : "en";
+    window.location.replace(`/${locale}/`);
 </script>
-<Layout/>
+
+<!-- No Js Fallback -->
+<Layout locale="en">
+    <main>
+        <div>
+            <h1>Choose <br> your language</h1>
+
+            <nav>
+                <a class="btn" href="/de/" hreflang="de" lang="de">Deutsch</a>
+                <a class="btn" href="/en/" hreflang="en" lang="en">English</a>
+            </nav>
+        </div>
+    </main>
+</Layout>
+<style>
+    main {
+        height: 90vh;
+        display: grid;
+        place-items: center;
+    }
+
+    div {
+        padding: var(--space-3);
+        width: fit-content;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+
+    nav {
+        display: flex;
+        gap: var(--space-2);
+    }
+</style>

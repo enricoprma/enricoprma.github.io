@@ -1,11 +1,11 @@
-import type { Translation } from "../translation";
+import type { LocalizedText } from "../translation";
 
 export type Project = {
   title: string;
-  description: Translation;
-  tags: string[];
+  description: LocalizedText;
+  tags: (string | LocalizedText)[];
   links?: {
-    label: string;
+    label: string | LocalizedText;
     href: string;
   }[];
 };
@@ -15,12 +15,23 @@ export const PROJECTS: Project[] = [
     title: "Wahl-Navi",
     description: {
       de: "Datengesteuerte Angular-App zur Wahlorientierung mit gewichteter Parteizuweisung, lokaler Speicherung des Fortschritts und einer Excel-zu-YAML-Pipeline. Enthält einen fiktiven Demo-Datensatz.",
-      en: "Data-driven Angular election-orientation app with weighted party matching, local progress saving, and an Excel-to-YAML pipeline. Includes a fictional demo dataset.",
-    },
-    tags: ["Angular", "Python", "Elections", "Neutrality"],
+      en: "Data-driven Angular voting advice app with weighted party matching, local progress saving, and an Excel-to-YAML pipeline. Includes a fictional demo dataset.",
+    } satisfies LocalizedText,
+    tags: [
+      "Angular",
+      "Python",
+      {
+        de: "Wahlen",
+        en: "Elections",
+      } satisfies LocalizedText,
+      {
+        de: "Neutralität",
+        en: "Neutrality",
+      } satisfies LocalizedText,
+    ],
     links: [
       {
-        label: "Live Demo",
+        label: { de: "Live-Demo", en: "Live Demo" } satisfies LocalizedText,
         href: "https://enricoprma.github.io/wahl-navi",
       },
       {
@@ -34,11 +45,19 @@ export const PROJECTS: Project[] = [
     description: {
       de: "Ein browserbasiertes drahtloses Touchpad und Tastatur für Windows.",
       en: "A browser-based wireless touchpad and keyboard for Windows.",
-    },
-    tags: ["NodeJS", "Express", "Electron", "Remote-Control"],
+    } satisfies LocalizedText,
+    tags: [
+      "NodeJS",
+      "Express",
+      "Electron",
+      { de: "Fernsteuerung", en: "Remote-Control" } satisfies LocalizedText,
+    ],
     links: [
       {
-        label: "Latest Release",
+        label: {
+          de: "Neueste Version",
+          en: "Latest Release",
+        } satisfies LocalizedText,
         href: "https://github.com/enricoprma/local-remote/releases/latest",
       },
       {

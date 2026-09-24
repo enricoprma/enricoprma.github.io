@@ -2,43 +2,45 @@
 import Layout from '../../layouts/Layout.astro';
 import { PROJECTS, type Project} from '../../data/projects' 
 import { EXPERIENCES } from '../../data/experiences'
-import { createTranslator, type Locale } from '../../translation';
-import { ui_content as TEXT } from '../../data/ui-content';
+import { createLocalizer, type Locale } from '../../translation';
+import { uiText } from '../../data/ui-text';
 
 export function getStaticPaths() {
   return [
-    { params: { lang: "de" } },
-    { params: { lang: "en" } },
+    { params: { locale: "de" } },
+    { params: { locale: "en" } },
   ];
 }
 
-const t = createTranslator(Astro.params.lang as Locale)
+const locale = Astro.params.locale as Locale
+
+const t = createLocalizer(locale)
 ---
 
-<Layout>
+<Layout {locale}>
 	<main>
 		<section id="hero">
 			<article id="about">
 				<header class="section-header">
-					<p class="eyebrow">01 / {t(TEXT.hero.about.about_me)}</p>
+					<p class="eyebrow">01 / {t(uiText.hero.aboutMe)}</p>
 					<h1 id="author">Enrico Perea</h1>
 				</header>
-				<h2>I design and build digital products that make complex things feel simple.</h2>
-				<p>Human-Technology Interaction student focused on frontend development, software engineering and UX.</p>
+				<h2>{t(uiText.hero.headline)}</h2>
+				<p>{t(uiText.hero.intro)}</p>
 			</article>
 			<article id="about-meta">
 				<table>
 					<tr>
-						<td>Focus:</td>
+						<td>{t(uiText.hero.metadata.focus)}</td>
 						<td>UX</td>
 					</tr>
 					<tr>
-						<td>Projects:</td>
+						<td>{t(uiText.hero.metadata.projects)}</td>
 						<td><a class="no-underline" href="https://github.com/enricoprma" target="_blank" rel="noreferrer">GitHub↗</a></td>
 					</tr>
 					<tr>
-						<td>Contact:</td>
-						<td><a class="no-underline" href="mailto:enrico.perea@yahoo.de" target="_blank" rel="noreferrer">E-Mail↗</a></td>
+						<td>{t(uiText.hero.metadata.contact)}</td>
+						<td><a class="no-underline" href="mailto:enrico.perea@yahoo.de" target="_blank" rel="noreferrer">{t(uiText.hero.metadata.email)}</a></td>
 					</tr>
 				</table>
 			</article>
@@ -48,21 +50,21 @@ const t = createTranslator(Astro.params.lang as Locale)
 
 		<section id="projects-section">
 			<header class="section-header">
-				<p class="eyebrow">02 / SELECTED PROJECTS</p>
-				<h1>What i built.</h1>
+				<p class="eyebrow">02 / {t(uiText.projects.label)}</p>
+				<h1>{t(uiText.projects.heading)}</h1>
 			</header>
 			<div id="projects">
 				{PROJECTS && PROJECTS.map((project: Project, i) => (
 					<div class="project">
 						<header class="section-header">
-							<p class="eyebrow">PROJECTS / {(i+1).toLocaleString(undefined, {minimumIntegerDigits: 2})}</p>
+							<p class="eyebrow">{t(uiText.projects.itemLabel)} {(i+1).toLocaleString(undefined, {minimumIntegerDigits: 2})}</p>
 							<h2>{project.title}</h2>
 						</header>
 						<div class="project-content">
 							<p>{t(project.description)}</p>
 							<div class="tags">
 								{project.tags.map(tag => (
-									<h6 class="tag">{tag}</h6>
+									<h6 class="tag">{typeof tag === 'string' ? tag : t(tag)}</h6>
 								))}
 							</div>
 						</div>
@@ -70,7 +72,7 @@ const t = createTranslator(Astro.params.lang as Locale)
 							<hr class="soft"/>
 							<div class="links">
 								{project.links && project.links.map(link => (
-									<small><a class="link" href={link.href} target="_blank">{link.label}</a></small>
+									<small><a class="link" href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)}</a></small>
 								))}
 							</div>
 						</footer>
@@ -83,8 +85,8 @@ const t = createTranslator(Astro.params.lang as Locale)
 
 		<section id="experiences-section">
 			<header class="section-header">
-				<p class="eyebrow">03 / EXPERIENCE</p>
-				<h1>Where i worked.</h1>
+				<p class="eyebrow">03 / {t(uiText.experience.label)}</p>
+				<h1>{t(uiText.experience.heading)}</h1>
 			</header>
 			<div id="experiences">
 				{EXPERIENCES && EXPERIENCES.map(experience => (
@@ -242,7 +244,7 @@ const t = createTranslator(Astro.params.lang as Locale)
 			width: 100%;
 		}
 
-		#experiences-section > h1 {
+		#experiences-section h1 {
 			margin-bottom: 0;
 		}
 

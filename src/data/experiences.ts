@@ -1,11 +1,11 @@
-import type { Translation } from "../translation";
+import type { LocalizedText } from "../translation";
 
 export type Experience = {
   company: string;
-  role: Translation;
+  role: LocalizedText;
   startDate: string;
   endDate: string;
-  description: Translation[];
+  description: LocalizedText[];
   technologies: string[];
 };
 
@@ -14,17 +14,23 @@ export const EXPERIENCES: Experience[] = [
     company: "weiyu digital",
     role: {
       de: "Werkstudent Full-Stack-Entwicklung",
-      en: "Working Student Full-Stack Development",
+      en: "Working Student in Full-Stack Development",
     },
     startDate: "04.2025",
     endDate: "09.2025",
     description: [
       {
-        de: "",
+        de: "Weiterentwicklung einer Webanwendung mit Angular, TypeScript, Spring Boot und PostgreSQL.",
         en: "Developed web application features with Angular, TypeScript, Spring Boot and PostgreSQL.",
       },
-      { de: "", en: "Designed and implemented responsive UI components." },
-      { de: "", en: "Created and maintained end-to-end tests with Cypress." },
+      {
+        de: "Entwurf und Implementierung von responsiven UI-Komponenten.",
+        en: "Designed and implemented responsive UI components.",
+      },
+      {
+        de: "Erstellung und Pflege von End-to-End-Tests mit Cypress.",
+        en: "Created and maintained end-to-end tests with Cypress.",
+      },
     ],
     technologies: [
       "Angular",
@@ -44,16 +50,16 @@ export const EXPERIENCES: Experience[] = [
     endDate: "01.2025",
     description: [
       {
-        de: "",
-        en: "Redesigned web interfaces in Figma and implemented them in WordPress.",
+        de: "Neugestaltung der Firmenwebseite in Figma und Umsetzung in WordPress.",
+        en: "Redesign of the company website in Figma and implementation in WordPress.",
       },
       {
-        de: "",
+        de: "Fokus auf Informationsarchitektur, Nutzerführung und responsive Layouts.",
         en: "Worked on information architecture, user guidance and responsive layouts.",
       },
       {
-        de: "",
-        en: "Created print and digital media, including the employee magazine ABRISS.",
+        de: 'Erstellung von Print- und Digitalmedien, darunter das Unternehmensmagazin "ABRISS".',
+        en: "Created print and digital media, including the employee magazine 'ABRISS'.",
       },
     ],
     technologies: ["Figma", "WordPress", "CSS", "PHP", "UX/UI Design"],
