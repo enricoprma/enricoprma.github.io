@@ -1,0 +1,98 @@
+---
+import type { Project } from '../data/projects';
+import { uiText } from '../data/ui-text';
+import { createLocalizer, type Locale } from '../translation';
+
+interface Props {
+  project: Project;
+  index: number;
+  locale: Locale;
+}
+
+const { project, index, locale } = Astro.props;
+const t = createLocalizer(locale);
+---
+
+<div class="project-card">
+  <img class="project-illustration" src={project.imgSrc} alt="" />
+  <div class="project">
+    <header class="section-header">
+      <p class="eyebrow">{t(uiText.projects.itemLabel)} {(index + 1).toLocaleString(undefined, { minimumIntegerDigits: 2 })}</p>
+      <h2>{project.title}</h2>
+    </header>
+    <div class="project-content">
+      <p class="project-description">{t(project.description)}</p>
+      <div class="tags project-tags">
+        {project.tags.map(tag => (
+          <h6 class="tag">{typeof tag === 'string' ? tag : t(tag)}</h6>
+        ))}
+      </div>
+    </div>
+    <footer class="project-footer">
+      <hr class="soft" />
+      <div class="project-links">
+        {project.links?.map(link => (
+          <small><a class="link" href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)}</a></small>
+        ))}
+      </div>
+    </footer>
+  </div>
+</div>
+
+<style>
+  .project-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .project-illustration {
+    width: 100%;
+    padding: var(--space-2);
+    border: 2px dashed;
+    border-bottom: none;
+    max-height: 30vh;
+  }
+
+  .project {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    padding: var(--space-5);
+    border: 2px dashed;
+    gap: var(--space-3);
+  }
+
+  .project-content {
+    display: flex;
+    gap: var(--space-5);
+    align-items: flex-start;
+  }
+
+  .project-description,
+  .project-tags {
+    width: 50%;
+  }
+
+  .project-links {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--space-2);
+  }
+
+  .project-footer {
+    margin-top: auto;
+  }
+
+  @media (max-width: 1360px) {
+    .project-content {
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .project-description,
+    .project-tags {
+      width: 100%;
+    }
+  }
+</style>

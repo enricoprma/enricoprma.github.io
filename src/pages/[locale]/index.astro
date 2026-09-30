@@ -1,7 +1,9 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { PROJECTS, type Project} from '../../data/projects' 
-import { EXPERIENCES } from '../../data/experiences'
+import ProjectCard from '../../components/ProjectCard.astro';
+import ExperienceItem from '../../components/ExperienceItem.astro';
+import { PROJECTS } from '../../data/projects';
+import { EXPERIENCES } from '../../data/experiences';
 import { createLocalizer, type Locale } from '../../translation';
 import { uiText } from '../../data/ui-text';
 
@@ -12,9 +14,9 @@ export function getStaticPaths() {
   ];
 }
 
-const locale = Astro.params.locale as Locale
+const locale = Astro.params.locale as Locale;
 
-const t = createLocalizer(locale)
+const t = createLocalizer(locale);
 ---
 
 <Layout {locale}>
@@ -29,19 +31,19 @@ const t = createLocalizer(locale)
 				<p>{t(uiText.hero.intro)}</p>
 			</article>
 			<article id="about-meta">
-				<img src="/illustrations/hero-ux-code.svg" alt="">
+				<img class="hero-illustration" src="/illustrations/hero-ux-code.svg" alt="">
 				<table>
 					<tr>
-						<td>{t(uiText.hero.metadata.focus)}</td>
-						<td>UX</td>
+						<td class="metadata-label">{t(uiText.hero.metadata.focus)}</td>
+						<td class="metadata-value">UX</td>
 					</tr>
 					<tr>
-						<td>{t(uiText.hero.metadata.projects)}</td>
-						<td><a class="no-underline" href="https://github.com/enricoprma" target="_blank" rel="noreferrer">GitHub↗</a></td>
+						<td class="metadata-label">{t(uiText.hero.metadata.projects)}</td>
+						<td class="metadata-value"><a class="no-underline" href="https://github.com/enricoprma" target="_blank" rel="noreferrer">GitHub↗</a></td>
 					</tr>
 					<tr>
-						<td>{t(uiText.hero.metadata.contact)}</td>
-						<td><a class="no-underline" href="mailto:enrico.perea@yahoo.de" target="_blank" rel="noreferrer">{t(uiText.hero.metadata.email)}</a></td>
+						<td class="metadata-label">{t(uiText.hero.metadata.contact)}</td>
+						<td class="metadata-value"><a class="no-underline" href="mailto:enrico.perea@yahoo.de" target="_blank" rel="noreferrer">{t(uiText.hero.metadata.email)}</a></td>
 					</tr>
 				</table>
 			</article>
@@ -49,289 +51,112 @@ const t = createLocalizer(locale)
 
 		<hr/>
 
-		<section id="projects-section">
+		<section id="projects-section" class="portfolio-section">
 			<header class="section-header">
 				<p class="eyebrow">02 / {t(uiText.projects.label)}</p>
 				<h1>{t(uiText.projects.heading)}</h1>
 			</header>
 			<div id="projects">
-				{PROJECTS && PROJECTS.map((project: Project, i) => (
-					<div>
-						<img src={project.imgSrc} alt=""/>
-						<div class="project">
-							<header class="section-header">
-								<p class="eyebrow">{t(uiText.projects.itemLabel)} {(i+1).toLocaleString(undefined, {minimumIntegerDigits: 2})}</p>
-								<h2>{project.title}</h2>
-							</header>
-							<div class="project-content">
-								<p>{t(project.description)}</p>
-								<div class="tags">
-									{project.tags.map(tag => (
-										<h6 class="tag">{typeof tag === 'string' ? tag : t(tag)}</h6>
-									))}
-								</div>
-							</div>
-							<footer class="project-footer">
-								<hr class="soft"/>
-								<div class="links">
-									{project.links && project.links.map(link => (
-										<small><a class="link" href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)}</a></small>
-									))}
-								</div>
-							</footer>
-						</div>
-					</div>
+				{PROJECTS.map((project, index) => (
+					<ProjectCard {project} {index} {locale} />
 				))}
 			</div>
 		</section>
 
 		<hr/>
 
-		<section id="experiences-section">
+		<section id="experiences-section" class="portfolio-section">
 			<header class="section-header">
 				<p class="eyebrow">03 / {t(uiText.experience.label)}</p>
-				<h1>{t(uiText.experience.heading)}</h1>
+				<h1 class="experience-heading">{t(uiText.experience.heading)}</h1>
 			</header>
 			<div id="experiences">
-				{EXPERIENCES && EXPERIENCES.map(experience => (
-					<>
-						<hr/>
-						<div class="experience">
-							<div>
-								<h4>{experience.startDate} - {experience.endDate}</h4>
-								<img class="tablet" src={experience.imgSrc} alt=""/>
-							</div>
-							<div class="experience-content">
-								<header class="section-header">
-									<h2>{experience.company}</h2>
-									<h4 style="color: var(--coral-deep)">{t(experience.role)}</h4>
-								</header>
-								<ul>
-									{experience.description.map(d => (
-										<li>{t(d)}</li>
-									))}
-								</ul>
-								<div class="tags">
-									{experience.technologies.map(t => (
-										<h6 class="tag">{t}</h6>
-									))}
-								</div>
-							</div>
-							<img class="desktop" src={experience.imgSrc} alt=""/>
-						</div>
-					</>
+				{EXPERIENCES.map(experience => (
+					<ExperienceItem {experience} {locale} />
 				))}
 			</div>
 		</section>
 	</main>
 </Layout>
 <style>
+  main {
+    padding: var(--space-6);
+    border: 1px dashed;
+  }
 
-	main {
-		padding: var(--space-6);
-		border: 1px dashed;
-	}
+  #hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: var(--space-5);
+  }
 
-	.section-header {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
+  #about {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+  }
 
-	#hero {
-		display: flex;
-		justify-content: space-between;
-		align-items: start;
-		gap: var(--space-5);
-	}
+  #about-meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
 
-	#about {
-		width: 50%;
-		display: flex;
-		flex-direction: column;
-	}
+  .hero-illustration {
+    width: 100%;
+  }
 
-	#about-meta {
-		display: flex;
-		flex-direction: column;
-		align-content: space-between;
-		gap: var(--space-5);
-	}
+  .metadata-label {
+    padding-left: var(--space-1);
+    padding-right: var(--space-2);
+  }
 
-	#about-meta table tr td:nth-child(2) {
-		text-align: end;
-	}
+  .metadata-value {
+    padding-left: var(--space-2);
+    padding-right: var(--space-1);
+    text-align: end;
+  }
 
-	td:first-child {
-		padding-left: var(--space-1);
-		padding-right: var(--space-2);
-	}
+  .portfolio-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
 
-	td:nth-child(2) {
-		padding-left: var(--space-2);
-		padding-right: var(--space-1);
-	}
+  #projects {
+    display: flex;
+    gap: var(--space-6);
+    align-items: stretch;
+  }
 
-	#projects-section, #experiences-section {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-	}
+  #experiences {
+    display: flex;
+    flex-direction: column;
+  }
 
-	.project, .experience{
-		padding: var(--space-1);
-	}
+  @media (max-width: 1360px) {
+    #hero {
+      flex-direction: column;
+    }
 
-	#projects {
-		display: flex;
-		gap: var(--space-6);
-		align-items: stretch;
-	}
-	#projects > div > img {
-		padding: var(--space-2);
-		border: 2px dashed;
-		border-bottom: none;
-		max-height: 30vh;
-	}
-	#projects > div {
-		display: flex;
-		flex-direction: column;
-		gap: 0;
-	}
-	.project {
-		display: flex;
-		flex-direction: column;
-		width: 100%;
-		padding: var(--space-5);
-		border: 2px dashed;
-		gap: var(--space-2);
-	}
-	.project-content {
-		display: flex;
-		gap: var(--space-5);
-		align-items: flex-start;
-	}
-	.project-content > * {
-		width: 50%;
-	}
-	.links{
-		display: flex;
-		flex-wrap: wrap;
-		column-gap: var(--space-2);
-	}
-	.project-footer {
-		margin-top: auto;
-	}
+    #about {
+      width: 100%;
+    }
+  }
 
+  @media (max-width: 820px) {
+    main {
+      padding: var(--space-4);
+    }
 
-	#experiences {
-		display: flex;
-		flex-direction: column;
-	}
+    #projects {
+      flex-direction: column;
+      gap: var(--space-3);
+    }
 
-	.experience {
-		display: grid;
-		grid-template-columns: 1fr 2fr 1fr;
-		gap: var(--space-6)
-	}
-
-	.experience-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-
-	.tags, .links {
-		display: flex;
-		flex-wrap: wrap;
-	}
-	.tags {
-		column-gap: var(--space-2);
-	}
-
-	.tablet {
-		display: none;
-	}
-
-	@media (max-width: 1600px) and (min-width: 820px) {
-
-		.desktop {
-			display: none;
-		}
-
-		.tablet {
-			display: inline;
-		}
-
-		.experience-content {
-			grid-column: 2/4;
-		}
-
-		.experience div:nth-child(1) {
-			display: flex;
-			flex-direction: column;
-			justify-content: space-between;
-		}
-	}
-
-	@media (max-width: 1360px) {
-		#hero {
-			flex-direction: column;
-			align-items: start;
-			gap: var(--space-5);
-		}
-
-		#about {
-			width: 100%;
-		}
-
-		.project-content {
-			flex-direction: column;
-			gap: var(--space-1);
-		}
-
-		.project-content > * {
-			width: 100%;
-		}
-	}
-
-	@media (max-width: 820px) {
-
-		main {
-			padding: var(--space-4);
-		}
-
-		#projects {
-			flex-direction: column;
-			gap: var(--space-3)
-		}
-		.project {
-			width: 100%;
-		}
-
-		#experiences-section h1 {
-			margin-bottom: 0;
-		}
-
-		#experiences {
-			gap: 0;
-		}
-
-		.experience {
-			grid-template-columns: none;
-			gap: var(--space-5);
-		}
-
-		.experience-content {
-			gap: 0;
-		}
-
-		.tags {
-			column-gap: var(--space-1);
-		}
-		.tag {
-			margin-bottom: var(--space-1);
-		}
-
-	}
+    .experience-heading {
+      margin-bottom: 0;
+    }
+  }
 </style>

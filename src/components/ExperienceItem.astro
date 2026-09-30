@@ -1,0 +1,88 @@
+---
+import type { Experience } from '../data/experiences';
+import { createLocalizer, type Locale } from '../translation';
+
+interface Props {
+  experience: Experience;
+  locale: Locale;
+}
+
+const { experience, locale } = Astro.props;
+const t = createLocalizer(locale);
+---
+
+<hr />
+<div class="experience">
+  <div class="experience-date">
+    <h4>{experience.startDate} - {experience.endDate}</h4>
+  </div>
+  <div class="experience-content">
+    <header class="section-header">
+      <h2>{experience.company}</h2>
+      <h4 class="experience-role">{t(experience.role)}</h4>
+    </header>
+    <ul>
+      {experience.description.map(description => <li>{t(description)}</li>)}
+    </ul>
+    <div class="tags">
+      {experience.technologies.map(technology => <h6 class="tag">{technology}</h6>)}
+    </div>
+  </div>
+  <img class="experience-illustration" src={experience.imgSrc} alt="" />
+</div>
+
+<style>
+  .experience {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-areas: "date content illustration";
+    gap: var(--space-6);
+    padding: var(--space-1);
+  }
+
+  .experience-date {
+    grid-area: date;
+  }
+
+  .experience-content {
+    grid-area: content;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .experience-role {
+    color: var(--coral-deep);
+  }
+
+  .experience-illustration {
+    grid-area: illustration;
+    width: 100%;
+  }
+
+  @media (820px < width <= 1600px) {
+    .experience {
+      grid-template-areas:
+        "date content content"
+        "illustration content content";
+      grid-template-rows: auto 1fr;
+      row-gap: 0;
+    }
+
+    .experience-illustration {
+      align-self: end;
+    }
+  }
+
+  @media (max-width: 820px) {
+    .experience {
+      grid-template-columns: 1fr;
+      grid-template-areas: "date" "content" "illustration";
+      gap: var(--space-5);
+    }
+
+    .experience-content {
+      gap: 0;
+    }
+  }
+</style>
