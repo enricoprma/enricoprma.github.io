@@ -125,7 +125,8 @@ const t = createLocalizer(locale);
   }
 
   #projects {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr));
     gap: var(--space-6);
     align-items: stretch;
   }
@@ -151,7 +152,6 @@ const t = createLocalizer(locale);
     }
 
     #projects {
-      flex-direction: column;
       gap: var(--space-3);
     }
 

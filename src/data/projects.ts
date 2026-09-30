@@ -1,6 +1,7 @@
 import type { LocalizedText } from "../translation";
 
 export type Project = {
+  slug: string;
   title: string;
   description: LocalizedText;
   tags: (string | LocalizedText)[];
@@ -8,11 +9,12 @@ export type Project = {
     label: string | LocalizedText;
     href: string;
   }[];
-  imgSrc: string;
+  imgSrc?: string;
 };
 
 export const PROJECTS: Project[] = [
   {
+    slug: "wahl-navi",
     title: "Wahl-Navi",
     description: {
       de: "Datengesteuerte Angular-App zur Wahlorientierung mit gewichteter Parteizuweisung, lokaler Speicherung des Fortschritts und einer Excel-zu-YAML-Pipeline. Enthält einen fiktiven Demo-Datensatz.",
@@ -43,6 +45,7 @@ export const PROJECTS: Project[] = [
     imgSrc: "/illustrations/project-wahl-navi.svg",
   },
   {
+    slug: "local-remote",
     title: "Local-Remote",
     description: {
       de: "Ein browserbasiertes drahtloses Touchpad und Tastatur für Windows.",
@@ -68,5 +71,15 @@ export const PROJECTS: Project[] = [
       },
     ],
     imgSrc: "/illustrations/project-local-remote.svg",
+  },
+  {
+    slug: "ar-artenarchiv",
+    title: "AR-Arten-Archiv",
+    description: {
+      de: "Mixed-Reality-Anwendung für die Meta Quest 3, die fünf ausgestorbene oder möglicherweise ausgestorbene Tierarten mit Handtracking und Informationspanels in die reale Umgebung bringt.",
+      en: "A mixed-reality application for Meta Quest 3 that brings five extinct or possibly extinct animal species into the real environment through hand tracking and information panels.",
+    } satisfies LocalizedText,
+    tags: ["Godot", "GDScript", "OpenXR", "Meta Quest 3"],
+    imgSrc: "/illustrations/project-ar-artenarchiv.svg",
   },
 ];

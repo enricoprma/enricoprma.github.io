@@ -1,0 +1,53 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { InferGetStaticPropsType } from 'astro';
+import Layout from '../../../layouts/Layout.astro';
+import { PROJECTS } from '../../../data/projects';
+import { uiText } from '../../../data/ui-text';
+import { createLocalizer } from '../../../translation';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('projects');
+  return PROJECTS.flatMap(project => ['de', 'en'].map(locale => {
+    const entry = entries.find(entry => entry.data.project === project.slug && entry.data.locale === locale);
+    if (!entry) throw new Error(`Missing project text: ${project.slug}.${locale}`);
+    return { params: { locale, slug: project.slug }, props: { project, entry } };
+  }));
+}
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+const { project, entry } = Astro.props;
+const locale = entry.data.locale;
+const t = createLocalizer(locale);
+const otherLocale = locale === 'de' ? 'en' : 'de';
+const { Content } = await render(entry);
+---
+
+<Layout {locale} title={`${project.title} | Enrico Perea`}>
+  <main>
+    <nav>
+      <a href={`/${locale}/#projects-section`}>← {t(uiText.projects.back)}</a>
+      <a href={`/${otherLocale}/projects/${project.slug}/`} lang={otherLocale} hreflang={otherLocale}>
+        {otherLocale === 'de' ? 'Deutsch' : 'English'}
+      </a>
+    </nav>
+    <article>
+      <h1>{project.title}</h1>
+      <p>{t(project.description)}</p>
+      <p>{project.tags.map(tag => typeof tag === 'string' ? tag : t(tag)).join(' · ')}</p>
+      <Content />
+      <footer>
+        {project.links?.map(link => (
+          <a href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)}</a>
+        ))}
+      </footer>
+    </article>
+  </main>
+</Layout>
+
+<style>
+  main { max-width: 80ch; margin: var(--space-4) auto; }
+  nav, footer { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+  nav { justify-content: space-between; margin-bottom: var(--space-5); }
+  article :global(h2) { margin-top: var(--space-4); font-size: var(--text-h3); }
+</style>

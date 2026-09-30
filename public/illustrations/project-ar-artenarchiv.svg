@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="460" height="270" viewBox="0 0 460 270" role="img" aria-labelledby="title desc">
+  <title id="title">AR-Artenarchiv</title>
+  <desc id="desc">Ein Dodo auf einer räumlichen Projektionsfläche, eingerahmt von AR-Markierungen. Eine schwebende Archivkarte und eine Mixed-Reality-Brille ergänzen die Darstellung.</desc>
+  <defs>
+    <style>
+      .s{stroke:#283f62;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round}
+      .line{fill:none}.paper{fill:#f5efdf}.blue{fill:#789bc5}.mint{fill:#a8cbb8}.coral{fill:#e9958c}.yellow{fill:#e7ca83}.ink{fill:#283f62}
+    </style>
+  </defs>
+
+  <!-- Same palette, canvas and outline weight as the other project cards. -->
+  <path class="s mint" d="M40 55h364v172H40z"/>
+  <path class="s paper" d="M75 28h253v204H75z"/>
+
+  <!-- A real-space placement plane, with a projected footprint. -->
+  <path class="s blue" d="m94 207 104-39 109 39-105 36z"/>
+  <path class="s line" d="m128 194 109 37m-73-51 109 39m-145 0 104-39m-68 51 105-38" opacity=".35"/>
+  <ellipse cx="204" cy="205" rx="51" ry="11" fill="#283f62" opacity=".13"/>
+
+  <!-- Dodo: rounded body, small wing, large hooked beak and sturdy feet. -->
+  <path class="s yellow" d="m187 178-2 23-13 7h25m21-29 3 21 13 7h-24"/>
+  <path class="s paper" d="m152 146-16-12 2 18-12-4 12 17 19 4"/>
+  <path class="s blue" d="M155 174c-14-15-12-39 5-57 12-13 31-15 44-10 6-8 6-15 6-24 0-19 12-32 29-32 19 0 31 13 29 29-1 12-12 19-21 23-6 3-8 11-8 19 9 11 12 22 9 34-5 23-28 34-52 32-17-1-31-5-41-14z"/>
+  <path class="s paper" d="M236 96c-4 11-1 18 3 26 7 12 8 23 3 35-6 15-21 23-34 25 22 0 36-11 40-26 3-12 0-23-9-34 0-8 2-16 8-19 5-2 10-5 14-9"/>
+  <path class="s coral" d="M251 66c18-6 36 0 42 12 4 8 2 18-6 23l-4-13-24-2-9-8z"/>
+  <path class="s line" d="m261 77 23 4"/>
+  <circle class="ink" cx="241" cy="69" r="3.5"/>
+  <path class="s line" d="M167 137c14-13 35-8 42 10-10 15-24 19-38 13m1-12 13 6"/>
+
+  <!-- AR targeting brackets around the specimen. -->
+  <path class="s line" d="M110 94V72h22m-22 107v22h22m159-82v22h-15"/>
+
+  <!-- Floating archive card, with a leaf specimen and abstract text lines. -->
+  <path fill="#e7ca83" d="M327 47h90v107h-90z"/>
+  <rect class="s paper" x="318" y="38" width="90" height="107" rx="4"/>
+  <path class="s line" d="M331 56h23m-23 68h62m-62 9h42"/>
+  <path class="s mint" d="M346 101c-3-20 13-31 34-30 1 20-13 35-34 30z"/>
+  <path class="s line" d="m341 108 28-26m-17 17 1-11m5 6h10"/>
+  <circle class="s coral" cx="390" cy="55" r="5"/>
+  <path class="s line" stroke-dasharray="4 5" d="M318 115h-15v39h-36"/>
+
+  <!-- Headset in the foreground: the device used to explore the archive. -->
+  <path class="s line" d="M320 191v-10c0-15 14-26 32-26s32 11 32 26v10"/>
+  <path class="s coral" d="M307 190h-9v26h10m88-26h10v26h-10"/>
+  <path class="s paper" d="M318 179h68c9 0 15 7 15 16v22c0 10-7 17-16 17h-19l-8-10h-12l-8 10h-20c-9 0-16-7-16-17v-22c0-9 7-16 16-16z"/>
+  <rect class="s blue" x="316" y="192" width="12" height="22" rx="6"/>
+  <rect class="s blue" x="346" y="190" width="12" height="22" rx="6"/>
+  <rect class="s blue" x="376" y="192" width="12" height="22" rx="6"/>
+
+  <path class="s line" d="M40 34h22M29 45h33m354 120h17m-9-8v16M66 244h33"/>
+</svg>

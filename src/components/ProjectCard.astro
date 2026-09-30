@@ -14,7 +14,7 @@ const t = createLocalizer(locale);
 ---
 
 <div class="project-card">
-  <img class="project-illustration" src={project.imgSrc} alt="" />
+  {project.imgSrc && <img class="project-illustration" src={project.imgSrc} alt="" />}
   <div class="project">
     <header class="section-header">
       <p class="eyebrow">{t(uiText.projects.itemLabel)} {(index + 1).toLocaleString(undefined, { minimumIntegerDigits: 2 })}</p>
@@ -31,6 +31,7 @@ const t = createLocalizer(locale);
     <footer class="project-footer">
       <hr class="soft" />
       <div class="project-links">
+        <small><a class="link" href={`/${locale}/projects/${project.slug}/`}>{t(uiText.projects.discover)}</a></small>
         {project.links?.map(link => (
           <small><a class="link" href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)}</a></small>
         ))}
@@ -43,6 +44,9 @@ const t = createLocalizer(locale);
   .project-card {
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    container-type: inline-size;
+    overflow-wrap: anywhere;
   }
 
   .project-illustration {
@@ -58,20 +62,21 @@ const t = createLocalizer(locale);
     flex: 1;
     flex-direction: column;
     width: 100%;
-    padding: var(--space-5);
+    padding: clamp(1rem, 7cqi, 3rem);
     border: 2px dashed;
     gap: var(--space-3);
   }
 
   .project-content {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-5);
     align-items: flex-start;
   }
 
   .project-description,
   .project-tags {
-    width: 50%;
+    min-width: 0;
   }
 
   .project-links {
@@ -84,15 +89,11 @@ const t = createLocalizer(locale);
     margin-top: auto;
   }
 
-  @media (max-width: 1360px) {
+  @container (max-width: 36rem) {
     .project-content {
-      flex-direction: column;
+      grid-template-columns: minmax(0, 1fr);
       gap: var(--space-1);
     }
 
-    .project-description,
-    .project-tags {
-      width: 100%;
-    }
   }
 </style>

@@ -1,4 +1,4 @@
-import type { LocalizedText, LocalizedTextTree } from "../translation";
+import type { LocalizedTextTree } from "../translation";
 
 export const uiText = {
   hero: {
@@ -35,6 +35,14 @@ export const uiText = {
   },
 
   projects: {
+    discover: {
+      de: "Projekt entdecken",
+      en: "Explore project",
+    },
+    back: {
+      de: "Alle Projekte",
+      en: "All projects",
+    },
     label: {
       de: "AUSGEWÄHLTE PROJEKTE",
       en: "SELECTED PROJECTS",
