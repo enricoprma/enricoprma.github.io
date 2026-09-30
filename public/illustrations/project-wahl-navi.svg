@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 270" role="img" aria-labelledby="title desc">
+  <title id="title">Wahl-Navi project illustration</title>
+  <desc id="desc">A questionnaire sheet with a checked answer and an eighty-two percent match badge.</desc>
+  <defs>
+    <filter id="yellow-shadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="10" dy="10" flood-color="#e7ca83" flood-opacity="1"/>
+    </filter>
+    <style>
+      .s{stroke:#283f62;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round}.line{fill:none}.paper{fill:#f5efdf}.blue{fill:#789bc5}.coral{fill:#e9958c}
+      .type{fill:#283f62;font-family:'Courier New',monospace;font-size:10px;font-weight:700;letter-spacing:.8px;text-anchor:middle}.big{font-size:15px}
+    </style>
+  </defs>
+  <path class="s blue" d="M40 55h364v172H40z"/>
+  <g filter="url(#yellow-shadow)">
+    <path class="s paper" d="M93 24h264v221H93z"/>
+    <path class="s line" d="M118 65h139M118 85h93"/>
+    <rect class="s line" x="118" y="118" width="27" height="27"/>
+    <path class="s line" d="m124 131 8 8 18-25M165 126h134M165 141h89"/>
+    <rect class="s line" x="118" y="171" width="27" height="27"/>
+    <path class="s line" d="M165 179h110M165 194h141"/>
+  </g>
+  <g>
+    <circle class="s coral" cx="359" cy="60" r="38"/>
+    <text class="type" x="359" y="57">MATCH</text>
+    <text class="type big" x="359" y="76">82%</text>
+  </g>
+  <path class="s line" d="M53 22h25M40 35h38M378 241h42"/>
+</svg>

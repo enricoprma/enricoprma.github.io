@@ -29,6 +29,7 @@ const t = createLocalizer(locale)
 				<p>{t(uiText.hero.intro)}</p>
 			</article>
 			<article id="about-meta">
+				<img src="/illustrations/hero-ux-code.svg" alt="">
 				<table>
 					<tr>
 						<td>{t(uiText.hero.metadata.focus)}</td>
@@ -55,27 +56,30 @@ const t = createLocalizer(locale)
 			</header>
 			<div id="projects">
 				{PROJECTS && PROJECTS.map((project: Project, i) => (
-					<div class="project">
-						<header class="section-header">
-							<p class="eyebrow">{t(uiText.projects.itemLabel)} {(i+1).toLocaleString(undefined, {minimumIntegerDigits: 2})}</p>
-							<h2>{project.title}</h2>
-						</header>
-						<div class="project-content">
-							<p>{t(project.description)}</p>
-							<div class="tags">
-								{project.tags.map(tag => (
-									<h6 class="tag">{typeof tag === 'string' ? tag : t(tag)}</h6>
-								))}
+					<div>
+						<img src={project.imgSrc} alt=""/>
+						<div class="project">
+							<header class="section-header">
+								<p class="eyebrow">{t(uiText.projects.itemLabel)} {(i+1).toLocaleString(undefined, {minimumIntegerDigits: 2})}</p>
+								<h2>{project.title}</h2>
+							</header>
+							<div class="project-content">
+								<p>{t(project.description)}</p>
+								<div class="tags">
+									{project.tags.map(tag => (
+										<h6 class="tag">{typeof tag === 'string' ? tag : t(tag)}</h6>
+									))}
+								</div>
 							</div>
+							<footer class="project-footer">
+								<hr class="soft"/>
+								<div class="links">
+									{project.links && project.links.map(link => (
+										<small><a class="link" href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)}</a></small>
+									))}
+								</div>
+							</footer>
 						</div>
-						<footer class="project-footer">
-							<hr class="soft"/>
-							<div class="links">
-								{project.links && project.links.map(link => (
-									<small><a class="link" href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)}</a></small>
-								))}
-							</div>
-						</footer>
 					</div>
 				))}
 			</div>
@@ -93,10 +97,15 @@ const t = createLocalizer(locale)
 					<>
 						<hr/>
 						<div class="experience">
-							<h4>{experience.startDate} - {experience.endDate}</h4>
 							<div>
-								<h2>{experience.company}</h2>
-								<h4 style="color: var(--coral-deep)">{t(experience.role)}</h4>
+								<h4>{experience.startDate} - {experience.endDate}</h4>
+								<img class="tablet" src={experience.imgSrc} alt=""/>
+							</div>
+							<div class="experience-content">
+								<header class="section-header">
+									<h2>{experience.company}</h2>
+									<h4 style="color: var(--coral-deep)">{t(experience.role)}</h4>
+								</header>
 								<ul>
 									{experience.description.map(d => (
 										<li>{t(d)}</li>
@@ -108,7 +117,7 @@ const t = createLocalizer(locale)
 									))}
 								</div>
 							</div>
-							<div></div>
+							<img class="desktop" src={experience.imgSrc} alt=""/>
 						</div>
 					</>
 				))}
@@ -132,11 +141,21 @@ const t = createLocalizer(locale)
 	#hero {
 		display: flex;
 		justify-content: space-between;
-		align-items: end;
+		align-items: start;
+		gap: var(--space-5);
 	}
 
 	#about {
 		width: 50%;
+		display: flex;
+		flex-direction: column;
+	}
+
+	#about-meta {
+		display: flex;
+		flex-direction: column;
+		align-content: space-between;
+		gap: var(--space-5);
 	}
 
 	#about-meta table tr td:nth-child(2) {
@@ -168,10 +187,21 @@ const t = createLocalizer(locale)
 		gap: var(--space-6);
 		align-items: stretch;
 	}
+	#projects > div > img {
+		padding: var(--space-2);
+		border: 2px dashed;
+		border-bottom: none;
+		max-height: 30vh;
+	}
+	#projects > div {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+	}
 	.project {
 		display: flex;
 		flex-direction: column;
-		width: 50%;
+		width: 100%;
 		padding: var(--space-5);
 		border: 2px dashed;
 		gap: var(--space-2);
@@ -197,12 +227,18 @@ const t = createLocalizer(locale)
 	#experiences {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
 	}
 
 	.experience {
 		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-columns: 1fr 2fr 1fr;
+		gap: var(--space-6)
+	}
+
+	.experience-content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
 	}
 
 	.tags, .links {
@@ -213,20 +249,56 @@ const t = createLocalizer(locale)
 		column-gap: var(--space-2);
 	}
 
-	@media (max-width: 820px) {
+	.tablet {
+		display: none;
+	}
 
-		main {
-			padding: var(--space-4);
+	@media (max-width: 1600px) and (min-width: 820px) {
+
+		.desktop {
+			display: none;
 		}
 
+		.tablet {
+			display: inline;
+		}
+
+		.experience-content {
+			grid-column: 2/4;
+		}
+
+		.experience div:nth-child(1) {
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+		}
+	}
+
+	@media (max-width: 1360px) {
 		#hero {
 			flex-direction: column;
 			align-items: start;
-			gap: var(--space-2);
+			gap: var(--space-5);
 		}
 
 		#about {
 			width: 100%;
+		}
+
+		.project-content {
+			flex-direction: column;
+			gap: var(--space-1);
+		}
+
+		.project-content > * {
+			width: 100%;
+		}
+	}
+
+	@media (max-width: 820px) {
+
+		main {
+			padding: var(--space-4);
 		}
 
 		#projects {
@@ -234,13 +306,6 @@ const t = createLocalizer(locale)
 			gap: var(--space-3)
 		}
 		.project {
-			width: 100%;
-		}
-		.project-content {
-			flex-direction: column;
-			gap: var(--space-1);
-		}
-		.project-content > * {
 			width: 100%;
 		}
 
@@ -254,7 +319,11 @@ const t = createLocalizer(locale)
 
 		.experience {
 			grid-template-columns: none;
-			gap: var(--space-2);
+			gap: var(--space-5);
+		}
+
+		.experience-content {
+			gap: 0;
 		}
 
 		.tags {

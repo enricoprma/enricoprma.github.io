@@ -7,6 +7,7 @@ export type Experience = {
   endDate: string;
   description: LocalizedText[];
   technologies: string[];
+  imgSrc: string;
 };
 
 export const EXPERIENCES: Experience[] = [
@@ -39,6 +40,7 @@ export const EXPERIENCES: Experience[] = [
       "PostgreSQL",
       "Cypress",
     ],
+    imgSrc: "/illustrations/experience-development.svg",
   },
   {
     company: "Becker UG",
@@ -63,5 +65,6 @@ export const EXPERIENCES: Experience[] = [
       },
     ],
     technologies: ["Figma", "WordPress", "CSS", "PHP", "UX/UI Design"],
+    imgSrc: "/illustrations/experience-design.svg",
   },
 ];

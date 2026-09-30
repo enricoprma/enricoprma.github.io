@@ -8,6 +8,7 @@ export type Project = {
     label: string | LocalizedText;
     href: string;
   }[];
+  imgSrc: string;
 };
 
 export const PROJECTS: Project[] = [
@@ -39,6 +40,7 @@ export const PROJECTS: Project[] = [
         href: "https://github.com/enricoprma/wahl-navi",
       },
     ],
+    imgSrc: "/illustrations/project-wahl-navi.svg",
   },
   {
     title: "Local-Remote",
@@ -65,5 +67,6 @@ export const PROJECTS: Project[] = [
         href: "https://github.com/enricoprma/local-remote",
       },
     ],
+    imgSrc: "/illustrations/project-local-remote.svg",
   },
 ];
