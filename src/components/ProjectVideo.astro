@@ -1,0 +1,29 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  video: NonNullable<CollectionEntry<'projects'>['data']['video']>;
+}
+
+const { video } = Astro.props;
+---
+
+<figure class="project-media project-video">
+  <video
+    controls
+    playsinline
+    preload="none"
+    poster={video.poster}
+    width={video.width}
+    height={video.height}
+    aria-label={video.caption}
+    aria-describedby="intro-video-description"
+  >
+    <source src={video.src} type="video/mp4" />
+    <a href={video.src}>Video als MP4 öffnen</a>
+  </video>
+  <figcaption>
+    <strong>{video.caption}</strong>
+    <p id="intro-video-description">{video.description}</p>
+  </figcaption>
+</figure>

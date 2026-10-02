@@ -2,6 +2,8 @@
 import { getCollection, render } from 'astro:content';
 import type { InferGetStaticPropsType } from 'astro';
 import Layout from '../../../layouts/Layout.astro';
+import ProjectVideo from '../../../components/ProjectVideo.astro';
+import '../../../styles/project-article.css';
 import { PROJECTS } from '../../../data/projects';
 import { uiText } from '../../../data/ui-text';
 import { createLocalizer } from '../../../translation';
@@ -19,35 +21,52 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 const { project, entry } = Astro.props;
 const locale = entry.data.locale;
 const t = createLocalizer(locale);
-const otherLocale = locale === 'de' ? 'en' : 'de';
 const { Content } = await render(entry);
+const metadata = [
+  { label: locale === 'de' ? 'Rolle' : 'Role', value: entry.data.role },
+  { label: 'Team', value: entry.data.team },
+  { label: locale === 'de' ? 'Kontext' : 'Context', value: entry.data.context },
+  { label: locale === 'de' ? 'Zeitraum' : 'Period', value: entry.data.period },
+].filter(item => item.value);
 ---
 
 <Layout {locale} title={`${project.title} | Enrico Perea`}>
-  <main>
-    <nav>
-      <a href={`/${locale}/#projects-section`}>← {t(uiText.projects.back)}</a>
-      <a href={`/${otherLocale}/projects/${project.slug}/`} lang={otherLocale} hreflang={otherLocale}>
-        {otherLocale === 'de' ? 'Deutsch' : 'English'}
-      </a>
-    </nav>
-    <article>
-      <h1>{project.title}</h1>
-      <p>{t(project.description)}</p>
-      <p>{project.tags.map(tag => typeof tag === 'string' ? tag : t(tag)).join(' · ')}</p>
-      <Content />
-      <footer>
-        {project.links?.map(link => (
-          <a href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)}</a>
-        ))}
+  <main class="project-page">
+    <a id="back" href={`/${locale}/#projects-section`}>← {t(uiText.projects.back)}</a>
+    <article class="project-article">
+      <header class="project-header">
+        <h1>{project.title}</h1>
+        <p class="project-summary">{entry.data.summary ?? t(project.description)}</p>
+        {metadata.length > 0 ? (
+          <dl class="project-metadata">
+            {metadata.map(item => (
+              <div><dt>{item.label}</dt><dd>{item.value}</dd></div>
+            ))}
+            <div><dt>{locale === 'de' ? 'Technologien' : 'Technologies'}</dt><dd>{project.technologies.join(' · ')}</dd></div>
+          </dl>
+        ) : (
+          <p class="project-technologies">{project.tags.map(tag => typeof tag === 'string' ? tag : t(tag)).join(' · ')}</p>
+        )}
+        {project.links && (
+          <nav class="project-links" aria-label={locale === 'de' ? 'Projekt ausprobieren' : 'Try the project'}>
+            {project.links.map(link => (
+              <a href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)} ↗</a>
+            ))}
+          </nav>
+        )}
+      </header>
+      {entry.data.video && <ProjectVideo video={entry.data.video} />}
+      <div class="project-story"><Content /></div>
+      <footer class="project-footer">
+        {project.links && (
+          <nav class="project-links" aria-label={locale === 'de' ? 'Weiterführende Projektlinks' : 'More project links'}>
+            {project.links.map(link => (
+              <a href={link.href} target="_blank" rel="noreferrer">{typeof link.label === 'string' ? link.label : t(link.label)} ↗</a>
+            ))}
+          </nav>
+        )}
+        <a href={`/${locale}/#projects-section`}>← {t(uiText.projects.back)}</a>
       </footer>
     </article>
   </main>
 </Layout>
-
-<style>
-  main { max-width: 80ch; margin: var(--space-4) auto; }
-  nav, footer { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-  nav { justify-content: space-between; margin-bottom: var(--space-5); }
-  article :global(h2) { margin-top: var(--space-4); font-size: var(--text-h3); }
-</style>

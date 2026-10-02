@@ -7,6 +7,19 @@ const projects = defineCollection({
   schema: z.object({
     project: z.string(),
     locale: z.enum(['de', 'en']),
+    summary: z.string().optional(),
+    role: z.string().optional(),
+    team: z.string().optional(),
+    context: z.string().optional(),
+    period: z.string().optional(),
+    video: z.object({
+      src: z.string(),
+      poster: z.string(),
+      width: z.number().int().positive(),
+      height: z.number().int().positive(),
+      caption: z.string(),
+      description: z.string(),
+    }).optional(),
   }),
 });
 

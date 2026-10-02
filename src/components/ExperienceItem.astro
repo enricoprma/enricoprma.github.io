@@ -14,7 +14,7 @@ const t = createLocalizer(locale);
 <hr />
 <div class="experience">
   <div class="experience-date">
-    <h4>{experience.startDate} - {experience.endDate}</h4>
+    <h4>{experience.startDate} {locale === 'de' ? 'bis' : 'to'} {experience.endDate}</h4>
   </div>
   <div class="experience-content">
     <header class="section-header">

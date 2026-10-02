@@ -1,0 +1,61 @@
+---
+import type { Locale } from "../translation";
+
+interface Props {
+    locale: Locale;
+}
+
+const { locale } = Astro.props;
+
+const otherLocale: Locale = locale === "de" ? "en" : "de";
+
+const otherLocaleUrl = Astro.url.pathname.replace(
+    /^\/(de|en)(?=\/|$)/,
+    `/${otherLocale}`
+);
+---
+
+<nav>
+    <a href={`/${locale}/`}>
+        Enrico Perea
+    </a>
+
+    <a
+    id="language-switch"
+    href={otherLocaleUrl}
+    lang={otherLocale}
+    hreflang={otherLocale}
+    >
+        {otherLocale === "de" ? "Deutsch" : "English"}
+    </a>
+</nav>
+
+<script>
+    const languageSwitch = document.getElementById("language-switch");
+
+    languageSwitch?.addEventListener("click", (event) => {
+        event.preventDefault();
+
+        const targetUrl = languageSwitch.getAttribute("href");
+
+        if (targetUrl) {
+            window.location.replace(targetUrl);
+        }
+    });
+</script>
+
+<style>
+    nav {
+        padding: var(--space-2) var(--space-6);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: dashed 1px var(--ink);
+    }
+
+    @media (max-width: 820px) {
+        nav {
+            padding: var(--space-2) var(--space-4);
+        }
+    }
+</style>

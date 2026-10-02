@@ -5,6 +5,7 @@ export type Project = {
   title: string;
   description: LocalizedText;
   tags: (string | LocalizedText)[];
+  technologies: string[];
   links?: {
     label: string | LocalizedText;
     href: string;
@@ -17,7 +18,7 @@ export const PROJECTS: Project[] = [
     slug: "wahl-navi",
     title: "Wahl-Navi",
     description: {
-      de: "Datengesteuerte Angular-App zur Wahlorientierung mit gewichteter Parteizuweisung, lokaler Speicherung des Fortschritts und einer Excel-zu-YAML-Pipeline. Enthält einen fiktiven Demo-Datensatz.",
+      de: "Eigene Antworten mit kommunalen Parteipositionen vergleichen. Eine Demo mit fiktiven Wahldaten.",
       en: "Data-driven Angular voting advice app with weighted party matching, local progress saving, and an Excel-to-YAML pipeline. Includes a fictional demo dataset.",
     } satisfies LocalizedText,
     tags: [
@@ -32,6 +33,7 @@ export const PROJECTS: Project[] = [
         en: "Neutrality",
       } satisfies LocalizedText,
     ],
+    technologies: ["Angular", "TypeScript", "Python"],
     links: [
       {
         label: { de: "Live-Demo", en: "Live Demo" } satisfies LocalizedText,
@@ -48,7 +50,7 @@ export const PROJECTS: Project[] = [
     slug: "local-remote",
     title: "Local-Remote",
     description: {
-      de: "Ein browserbasiertes drahtloses Touchpad und Tastatur für Windows.",
+      de: "Lautstärke, Maus und Tastatur am Windows-PC vom Smartphone aus steuern.",
       en: "A browser-based wireless touchpad and keyboard for Windows.",
     } satisfies LocalizedText,
     tags: [
@@ -57,6 +59,7 @@ export const PROJECTS: Project[] = [
       "Electron",
       { de: "Fernsteuerung", en: "Remote-Control" } satisfies LocalizedText,
     ],
+    technologies: ["TypeScript", "Electron", "Node.js", "Express", "RobotJS"],
     links: [
       {
         label: {
@@ -74,12 +77,13 @@ export const PROJECTS: Project[] = [
   },
   {
     slug: "ar-artenarchiv",
-    title: "AR-Arten-Archiv",
+    title: "AR-Artenarchiv",
     description: {
-      de: "Mixed-Reality-Anwendung für die Meta Quest 3, die fünf ausgestorbene oder möglicherweise ausgestorbene Tierarten mit Handtracking und Informationspanels in die reale Umgebung bringt.",
+      de: "Fünf Tierdarstellungen mit Handinteraktion und Artinformationen in der realen Umgebung entdecken.",
       en: "A mixed-reality application for Meta Quest 3 that brings five extinct or possibly extinct animal species into the real environment through hand tracking and information panels.",
     } satisfies LocalizedText,
     tags: ["Godot", "GDScript", "OpenXR", "Meta Quest 3"],
+    technologies: ["Godot", "GDScript", "OpenXR", "Meta Quest 3"],
     imgSrc: "/illustrations/project-ar-artenarchiv.svg",
   },
 ];
