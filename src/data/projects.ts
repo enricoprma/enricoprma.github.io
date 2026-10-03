@@ -19,7 +19,7 @@ export const PROJECTS: Project[] = [
     title: "Wahl-Navi",
     description: {
       de: "Eigene Antworten mit kommunalen Parteipositionen vergleichen. Eine Demo mit fiktiven Wahldaten.",
-      en: "Data-driven Angular voting advice app with weighted party matching, local progress saving, and an Excel-to-YAML pipeline. Includes a fictional demo dataset.",
+      en: "Compare your answers with local party positions. A demo using fictional election data.",
     } satisfies LocalizedText,
     tags: [
       "Angular",
@@ -51,7 +51,7 @@ export const PROJECTS: Project[] = [
     title: "Local-Remote",
     description: {
       de: "Lautstärke, Maus und Tastatur am Windows-PC vom Smartphone aus steuern.",
-      en: "A browser-based wireless touchpad and keyboard for Windows.",
+      en: "Control your Windows PC's volume, mouse and keyboard from your smartphone.",
     } satisfies LocalizedText,
     tags: [
       "NodeJS",
@@ -80,7 +80,7 @@ export const PROJECTS: Project[] = [
     title: "AR-Artenarchiv",
     description: {
       de: "Fünf Tierdarstellungen mit Handinteraktion und Artinformationen in der realen Umgebung entdecken.",
-      en: "A mixed-reality application for Meta Quest 3 that brings five extinct or possibly extinct animal species into the real environment through hand tracking and information panels.",
+      en: "Discover five virtual animals in your real surroundings, with hand interaction and species information.",
     } satisfies LocalizedText,
     tags: ["Godot", "GDScript", "OpenXR", "Meta Quest 3"],
     technologies: ["Godot", "GDScript", "OpenXR", "Meta Quest 3"],

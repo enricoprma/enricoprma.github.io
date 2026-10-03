@@ -175,8 +175,8 @@ a.no-underline {
 
 ul {
   list-style: "- ";
-  list-style-position: inside;
-  padding-left: 0;
+  list-style-position: outside;
+  padding-left: var(--space-2);
 }
 
 table {

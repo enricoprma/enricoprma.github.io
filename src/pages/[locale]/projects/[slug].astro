@@ -55,7 +55,7 @@ const metadata = [
           </nav>
         )}
       </header>
-      {entry.data.video && <ProjectVideo video={entry.data.video} />}
+      {entry.data.video && <ProjectVideo video={entry.data.video} {locale} />}
       <div class="project-story"><Content /></div>
       <footer class="project-footer">
         {project.links && (

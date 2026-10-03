@@ -1,11 +1,13 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import type { Locale } from '../translation';
 
 interface Props {
   video: NonNullable<CollectionEntry<'projects'>['data']['video']>;
+  locale: Locale;
 }
 
-const { video } = Astro.props;
+const { video, locale } = Astro.props;
 ---
 
 <figure class="project-media project-video">
@@ -20,7 +22,7 @@ const { video } = Astro.props;
     aria-describedby="intro-video-description"
   >
     <source src={video.src} type="video/mp4" />
-    <a href={video.src}>Video als MP4 öffnen</a>
+    <a href={video.src}>{locale === 'de' ? 'Video als MP4 öffnen' : 'Open video as MP4'}</a>
   </video>
   <figcaption>
     <strong>{video.caption}</strong>

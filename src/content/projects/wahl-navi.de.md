@@ -17,7 +17,7 @@ video:
 
 ## Lokalpolitische Positionen vergleichbar machen
 
-Wahl-Navi hilft Menschen dabei, ihre eigenen Positionen mit denen von Parteien zu vergleichen. Die Anwendung entstand für die Kommunalwahl 2025 in Bottrop und wurde auch von WAZ Essen mit eigenen lokalen Inhalten übernommen. Für mein Portfolio habe ich sie im September 2026 überarbeitet. Die heutige Live-Demo verwendet ausschließlich fiktive Wahldaten.
+Wahl-Navi hilft Menschen dabei, ihre eigenen Positionen mit denen von Parteien zu vergleichen. Die Anwendung entstand für die Kommunalwahl 2025 in Bottrop und wurde auch von der WAZ Essen mit eigenen lokalen Inhalten übernommen. Für mein Portfolio habe ich diese im September 2026 überarbeitet. Die heutige Live-Demo verwendet ausschließlich fiktive Wahldaten.
 
 ## Mein Beitrag
 
